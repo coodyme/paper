@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "client:dev": "vite --host",
-    "client:build": "vite build"
+    "client:build": "vite build",
+    "server:dev": "nodemon server/main.js",
+    "server": "node server/main.js"
   },
   "devDependencies": {
     "vite": "^6.2.0"
@@ -15,6 +17,11 @@
     "node": ">=18.18.2"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "nodemon": "^3.1.9",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "three": "^0.174.0"
   }
 }

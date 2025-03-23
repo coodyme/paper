@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { World } from './game/world.js';
 import { Player } from './game/player.js';
 import { ThirdPersonCamera } from './game/camera.js';
+import { NetworkManager } from './game/network.js';
 
 // Main game class
 class Game {
@@ -21,6 +22,8 @@ class Game {
         this.world = null;
         this.player = null;
         this.thirdPersonCamera = null;
+        this.networkManager = null;
+        this.updateInterval = null;
         
         this.init();
     }
@@ -47,6 +50,17 @@ class Game {
         
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
+        
+        // Initialize network manager
+        this.networkManager = new NetworkManager(this.scene);
+        this.networkManager.connect(this.player);
+        
+        // Set a reasonable network update rate (10 updates per second)
+        this.updateInterval = setInterval(() => {
+            if (this.networkManager) {
+                this.networkManager.update();
+            }
+        }, 100);
         
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
