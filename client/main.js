@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { World } from './game/world.js';
 import { Player } from './game/player.js';
+import { ThirdPersonCamera } from './game/camera.js';
 
 // Main game class
 class Game {
@@ -19,6 +20,7 @@ class Game {
         this.clock = new THREE.Clock();
         this.world = null;
         this.player = null;
+        this.thirdPersonCamera = null;
         
         this.init();
     }
@@ -34,11 +36,17 @@ class Game {
         this.camera.position.set(0, 5, 10);
         this.camera.lookAt(0, 0, 0);
         
+        // Initialize camera controller
+        this.thirdPersonCamera = new ThirdPersonCamera(this.camera);
+        
         // Initialize world
         this.world = new World(this.scene);
         
         // Initialize player
         this.player = new Player(this.scene);
+        
+        // Set player as camera target
+        this.thirdPersonCamera.setTarget(this.player.mesh);
         
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
@@ -59,9 +67,14 @@ class Game {
         // Get delta time
         const deltaTime = this.clock.getDelta();
         
-        // Update player and camera
+        // Update player
         if (this.player) {
-            this.player.update(this.camera, deltaTime);
+            this.player.update(deltaTime);
+        }
+        
+        // Update camera to follow player
+        if (this.thirdPersonCamera) {
+            this.thirdPersonCamera.update();
         }
         
         // Render scene

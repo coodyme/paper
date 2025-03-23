@@ -12,11 +12,6 @@ export class Player {
         this.moveLeft = false;
         this.moveRight = false;
         
-        // Camera follow properties
-        this.cameraFollow = null;
-        this.safeDistance = 5; // Distance behind player
-        this.cameraHeight = 2.5; // Height above player
-        
         this.createPlayer();
         this.setupControls();
     }
@@ -42,11 +37,6 @@ export class Player {
         const playerLight = new THREE.PointLight(0x00ffff, 1, 3);
         playerLight.position.set(0, 0, 0);
         this.mesh.add(playerLight);
-        
-        // Add a follow point for the camera
-        this.cameraFollow = new THREE.Object3D();
-        this.cameraFollow.position.set(0, this.cameraHeight, -this.safeDistance);
-        this.mesh.add(this.cameraFollow);
         
         this.scene.add(this.mesh);
     }
@@ -91,7 +81,7 @@ export class Player {
         }
     }
     
-    update(camera, deltaTime) {
+    update(deltaTime) {
         // Calculate movement based on key presses
         let speed = 0;
         
@@ -110,20 +100,5 @@ export class Player {
         
         // Animate player (floating effect)
         this.mesh.position.y = 0.5 + Math.sin(Date.now() * 0.002) * 0.1;
-        
-        // Update camera position based on player
-        this.updateCamera(camera);
-    }
-    
-    updateCamera(camera) {
-        // Get the world position of the camera follow point
-        const followPosition = new THREE.Vector3();
-        this.cameraFollow.getWorldPosition(followPosition);
-        
-        // Smoothly move camera to follow position
-        camera.position.lerp(followPosition, 0.05);
-        
-        // Make camera look at player
-        camera.lookAt(this.mesh.position);
     }
 }
