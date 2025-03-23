@@ -1,18 +1,26 @@
 import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { VoiceChat } from './voice.js';
+import { ProjectileManager } from './projectile.js';
 
 export class NetworkManager {
-    constructor(scene) {
+    constructor(scene, camera) {
         this.scene = scene;
+        this.camera = camera; // Store the camera reference
         this.socket = null;
         this.players = {};
         this.playerData = {}; // Store player data including peerId
         this.localPlayer = null;
         this.voiceChat = null;
+        this.projectileManager = null;
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
         
         // Initialize remote player materials
         this.playerMaterials = {};
+        
+        // Setup click event listener for throwing cubes
+        document.addEventListener('click', this.onMouseClick.bind(this));
     }
     
     /**
@@ -33,6 +41,9 @@ export class NetworkManager {
         
         // Initialize voice chat
         this.initializeVoiceChat();
+        
+        // Initialize projectile manager
+        this.projectileManager = new ProjectileManager(this.scene, this);
     }
     
     setupEventListeners() {
@@ -76,6 +87,13 @@ export class NetworkManager {
                 }
             }
         });
+        
+        // Handle remote cube throws
+        this.socket.on('remoteCubeThrow', (throwData) => {
+            if (this.projectileManager) {
+                this.projectileManager.createRemoteProjectile(throwData);
+            }
+        });
     }
     
     /**
@@ -85,6 +103,88 @@ export class NetworkManager {
         // Create voice chat manager
         this.voiceChat = new VoiceChat(this);
         await this.voiceChat.initialize();
+    }
+    
+    /**
+     * Handle mouse clicks for throwing cubes at players
+     * @param {MouseEvent} event - Mouse click event
+     */
+    onMouseClick(event) {
+        console.log("Mouse click detected at", event.clientX, event.clientY);
+        
+        // Calculate mouse position in normalized device coordinates
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        
+        console.log("Normalized coordinates:", this.mouse.x, this.mouse.y);
+        
+        // Use the stored camera reference instead of searching in the scene
+        if (!this.camera) {
+            console.error("Camera reference not found");
+            return;
+        }
+        
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        
+        // Visualize the ray for debugging (add this)
+        const rayOrigin = this.camera.position.clone();
+        const rayDirection = new THREE.Vector3();
+        this.raycaster.ray.direction.normalize();
+        rayDirection.copy(this.raycaster.ray.direction);
+
+        console.log("Ray origin:", rayOrigin.x, rayOrigin.y, rayOrigin.z);
+        console.log("Ray direction:", rayDirection.x, rayDirection.y, rayDirection.z);
+
+        // Optional: Create a debug line to visualize the ray
+        const rayLength = 50;
+        const rayEndpoint = new THREE.Vector3().copy(rayOrigin).add(rayDirection.multiplyScalar(rayLength));
+        console.log("Ray endpoint:", rayEndpoint.x, rayEndpoint.y, rayEndpoint.z);
+
+        // Create a line to visualize the ray
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([rayOrigin, rayEndpoint]);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const rayLine = new THREE.Line(lineGeometry, lineMaterial);
+        this.scene.add(rayLine);
+
+        // Remove the line after a short delay
+        setTimeout(() => {
+            this.scene.remove(rayLine);
+            lineGeometry.dispose();
+            lineMaterial.dispose();
+        }, 1000);
+        
+        // Create an array of objects to check for intersection
+        const remotePlayerMeshes = Object.keys(this.players).map(id => {
+            const mesh = this.players[id];
+            mesh.userData.playerId = id; // Store player ID for identification
+            return mesh;
+        });
+        
+        console.log("Checking intersections with", remotePlayerMeshes.length, "players");
+        
+        // Check for intersections
+        const intersects = this.raycaster.intersectObjects(remotePlayerMeshes);
+        console.log("Intersection results:", intersects.length > 0 ? "Hit" : "Miss", 
+                   intersects.length > 0 ? `(Player: ${intersects[0].object.userData.playerId})` : "");
+        
+        if (intersects.length > 0) {
+            // Found a player to throw a cube at!
+            const targetId = intersects[0].object.userData.playerId;
+            const targetPosition = intersects[0].object.position.clone();
+            
+            console.log(`Throwing cube at player ${targetId} at position:`, 
+                       targetPosition.x, targetPosition.y, targetPosition.z);
+            
+            // Add a visual indicator at the intersection point
+            this.createClickVisualizer(intersects[0].point);
+            
+            // Throw cube at this player
+            if (this.projectileManager) {
+                this.projectileManager.throwCubeAt(targetId, targetPosition);
+            } else {
+                console.error("ProjectileManager not initialized");
+            }
+        }
     }
     
     /**
@@ -208,8 +308,38 @@ export class NetworkManager {
     /**
      * Update function called from game loop
      */
-    update() {
+    update(deltaTime) {
         // Send local player updates
         this.sendPlayerUpdate();
+        
+        // Update projectiles
+        if (this.projectileManager) {
+            this.projectileManager.update(deltaTime);
+        }
+    }
+
+    /**
+     * Create a visual marker at the click position
+     * @param {THREE.Vector3} position - Position of the click
+     */
+    createClickVisualizer(position) {
+        // Create a small sphere to show where the click happened
+        const geometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const marker = new THREE.Mesh(geometry, material);
+        marker.position.copy(position);
+        this.scene.add(marker);
+        
+        // Remove after a short delay
+        setTimeout(() => {
+            this.scene.remove(marker);
+            geometry.dispose();
+            material.dispose();
+        }, 1000);
     }
 }

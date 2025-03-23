@@ -78,6 +78,23 @@ io.on('connection', (socket) => {
         }
     });
     
+    // Handle cube throws
+    socket.on('throwCube', (data) => {
+        console.log(`Player ${socket.id} threw a cube at player ${data.targetId}`);
+        console.log('Throw data:', JSON.stringify(data));
+        
+        // Add the source player ID to the data
+        const throwData = {
+            ...data,
+            sourceId: socket.id
+        };
+        
+        console.log('Broadcasting throw to all other players');
+        
+        // Broadcast the throw to all other players
+        socket.broadcast.emit('remoteCubeThrow', throwData);
+    });
+    
     // Handle player disconnection
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);

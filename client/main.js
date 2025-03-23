@@ -19,8 +19,26 @@ style.textContent = `
         color: #000 !important;
         box-shadow: 0 0 10px #00c3ff;
     }
+    #game-info {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        color: white;
+        font-family: monospace;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 1000;
+    }
 `;
 document.head.appendChild(style);
+
+// Create game info div
+const gameInfo = document.createElement('div');
+gameInfo.id = 'game-info';
+gameInfo.innerHTML = 'Click on another player to throw a cube!';
+document.body.appendChild(gameInfo);
 
 // Main game class
 class Game {
@@ -69,8 +87,8 @@ class Game {
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
         
-        // Initialize network manager
-        this.networkManager = new NetworkManager(this.scene);
+        // Initialize network manager - PASS THE CAMERA HERE
+        this.networkManager = new NetworkManager(this.scene, this.camera);
         this.networkManager.connect(this.player);
         
         // Set a reasonable network update rate (10 updates per second)
@@ -107,6 +125,11 @@ class Game {
         // Update camera to follow player
         if (this.thirdPersonCamera) {
             this.thirdPersonCamera.update();
+        }
+        
+        // Update projectiles and other networked entities
+        if (this.networkManager) {
+            this.networkManager.update(deltaTime);
         }
         
         // Render scene
