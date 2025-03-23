@@ -1,0 +1,75 @@
+import * as THREE from 'three';
+import { World } from './game/world.js';
+import { Player } from './game/player.js';
+
+// Main game class
+class Game {
+    constructor() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(
+            75, 
+            window.innerWidth / window.innerHeight, 
+            0.1, 
+            1000
+        );
+        this.renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true 
+        });
+        this.clock = new THREE.Clock();
+        this.world = null;
+        this.player = null;
+        
+        this.init();
+    }
+
+    init() {
+        // Setup renderer
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setClearColor(0x000000, 1);
+        document.body.appendChild(this.renderer.domElement);
+        
+        // Setup initial camera position
+        this.camera.position.set(0, 5, 10);
+        this.camera.lookAt(0, 0, 0);
+        
+        // Initialize world
+        this.world = new World(this.scene);
+        
+        // Initialize player
+        this.player = new Player(this.scene);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+        
+        // Start animation loop
+        this.animate();
+    }
+    
+    onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        
+        // Get delta time
+        const deltaTime = this.clock.getDelta();
+        
+        // Update player and camera
+        if (this.player) {
+            this.player.update(this.camera, deltaTime);
+        }
+        
+        // Render scene
+        this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    const game = new Game();
+});
