@@ -1,12 +1,15 @@
 import { io } from 'socket.io-client';
 import * as THREE from 'three';
+import { VoiceChat } from './voice.js';
 
 export class NetworkManager {
     constructor(scene) {
         this.scene = scene;
         this.socket = null;
         this.players = {};
+        this.playerData = {}; // Store player data including peerId
         this.localPlayer = null;
+        this.voiceChat = null;
         
         // Initialize remote player materials
         this.playerMaterials = {};
@@ -27,11 +30,15 @@ export class NetworkManager {
         
         // Set up event listeners
         this.setupEventListeners();
+        
+        // Initialize voice chat
+        this.initializeVoiceChat();
     }
     
     setupEventListeners() {
         // Initialize players already in the game
         this.socket.on('players', (players) => {
+            this.playerData = players; // Store all player data
             Object.keys(players).forEach(id => {
                 if (id !== this.socket.id) {
                     this.addRemotePlayer(id, players[id]);
@@ -41,18 +48,43 @@ export class NetworkManager {
         
         // Handle new player joining
         this.socket.on('playerJoined', (player) => {
+            this.playerData[player.id] = player; // Store player data
             this.addRemotePlayer(player.id, player);
         });
         
         // Handle player movement
         this.socket.on('playerMoved', (data) => {
+            this.playerData[data.id].position = data.position; // Update stored position
+            this.playerData[data.id].rotation = data.rotation; // Update stored rotation
             this.updateRemotePlayer(data.id, data.position, data.rotation);
         });
         
         // Handle player leaving
         this.socket.on('playerLeft', (id) => {
+            delete this.playerData[id]; // Remove player data
             this.removeRemotePlayer(id);
         });
+        
+        // Handle player peer ID registration
+        this.socket.on('playerPeerIdRegistered', (data) => {
+            if (this.playerData[data.id]) {
+                this.playerData[data.id].peerId = data.peerId;
+                
+                // If voice chat is initialized, connect to this player
+                if (this.voiceChat && this.voiceChat.enabled) {
+                    this.voiceChat.callPlayer(data.id, data.peerId);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Initialize voice chat
+     */
+    async initializeVoiceChat() {
+        // Create voice chat manager
+        this.voiceChat = new VoiceChat(this);
+        await this.voiceChat.initialize();
     }
     
     /**
@@ -71,6 +103,11 @@ export class NetworkManager {
                 y: this.localPlayer.mesh.rotation.y
             }
         });
+        
+        // Update voice volumes based on proximity
+        if (this.voiceChat) {
+            this.voiceChat.updateVoiceVolumes();
+        }
     }
     
     /**

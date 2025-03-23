@@ -20,6 +20,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "nodemon": "^3.1.9",
+    "peerjs": "^1.5.4",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "three": "^0.174.0"

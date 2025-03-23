@@ -26,13 +26,28 @@ export class PlayerManager {
             position,
             rotation,
             color: this.getRandomColor(),
-            joinTime: Date.now()
+            joinTime: Date.now(),
+            peerId: null // Add field for PeerJS ID
         };
         
         // Store player
         this.players[id] = player;
         
         return player;
+    }
+    
+    /**
+     * Set a player's PeerJS ID
+     * @param {string} id - Player socket ID
+     * @param {string} peerId - PeerJS ID
+     * @returns {boolean} - Success status
+     */
+    setPlayerPeerId(id, peerId) {
+        if (this.players[id]) {
+            this.players[id].peerId = peerId;
+            return true;
+        }
+        return false;
     }
     
     /**

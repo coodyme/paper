@@ -4,6 +4,24 @@ import { Player } from './game/player.js';
 import { ThirdPersonCamera } from './game/camera.js';
 import { NetworkManager } from './game/network.js';
 
+// Add CSS for voice chat controls
+const style = document.createElement('style');
+style.textContent = `
+    #voice-controls {
+        transition: all 0.3s ease;
+    }
+    .voice-inactive {
+        background-color: #333 !important;
+        color: #ccc !important;
+    }
+    .voice-active {
+        background-color: #00c3ff !important;
+        color: #000 !important;
+        box-shadow: 0 0 10px #00c3ff;
+    }
+`;
+document.head.appendChild(style);
+
 // Main game class
 class Game {
     constructor() {

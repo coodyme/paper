@@ -67,6 +67,17 @@ io.on('connection', (socket) => {
         });
     });
     
+    // Handle PeerJS ID registration
+    socket.on('registerPeerId', (peerId) => {
+        if (playerManager.setPlayerPeerId(socket.id, peerId)) {
+            // Broadcast peer ID to all players
+            io.emit('playerPeerIdRegistered', {
+                id: socket.id,
+                peerId: peerId
+            });
+        }
+    });
+    
     // Handle player disconnection
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
