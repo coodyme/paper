@@ -115,7 +115,9 @@ export class ProjectileManager {
             return;
         }
         
-        console.log(`ProjectileManager: Throwing cube at player ${targetId}`);
+        if (window.debugSettings?.projectiles) {
+            console.log(`ProjectileManager: Throwing cube at player ${targetId}`);
+        }
         
         const player = this.networkManager.localPlayer;
         
@@ -128,13 +130,18 @@ export class ProjectileManager {
             .subVectors(targetPosition, startPos)
             .normalize();
         
-        console.log("Projectile starting at:", startPos.x, startPos.y, startPos.z);
-        console.log("Projectile direction:", direction.x, direction.y, direction.z);
+        if (window.debugSettings?.projectiles) {
+            console.log("Projectile starting at:", startPos.x, startPos.y, startPos.z);
+            console.log("Projectile direction:", direction.x, direction.y, direction.z);
+        }
         
         // Create projectile
         const projectile = new Projectile(this.scene, startPos, direction);
         this.projectiles.push(projectile);
-        console.log("Local projectile created");
+        
+        if (window.debugSettings?.projectiles) {
+            console.log("Local projectile created");
+        }
         
         // Send throw event to server
         if (this.networkManager.socket) {
@@ -152,7 +159,10 @@ export class ProjectileManager {
                 }
             };
             
-            console.log("Sending throwCube event to server:", throwData);
+            if (window.debugSettings?.projectiles) {
+                console.log("Sending throwCube event to server:", throwData);
+            }
+            
             this.networkManager.socket.emit('throwCube', throwData);
         } else {
             console.error("Socket not connected, cannot send throw event");
@@ -161,8 +171,10 @@ export class ProjectileManager {
     
     // Create a projectile from remote player throw data
     createRemoteProjectile(throwData) {
-        console.log("Received remote cube throw from player:", throwData.sourceId);
-        console.log("Remote cube throw data:", throwData);
+        if (window.debugSettings?.projectiles) {
+            console.log("Received remote cube throw from player:", throwData.sourceId);
+            console.log("Remote cube throw data:", throwData);
+        }
         
         // Get starting position
         const startPos = new THREE.Vector3(
@@ -182,8 +194,10 @@ export class ProjectileManager {
         let color = 0xff00ff; // Default magenta
         if (this.networkManager.playerData[throwData.sourceId]) {
             color = this.networkManager.playerData[throwData.sourceId].color;
-            console.log(`Using player color: ${color.toString(16)}`);
-        } else {
+            if (window.debugSettings?.projectiles) {
+                console.log(`Using player color: ${color.toString(16)}`);
+            }
+        } else if (window.debugSettings?.projectiles) {
             console.log("No player data found for source player, using default color");
         }
         
@@ -191,7 +205,9 @@ export class ProjectileManager {
         const projectile = new Projectile(this.scene, startPos, direction, color);
         this.projectiles.push(projectile);
         
-        console.log("Remote projectile created and added to scene");
+        if (window.debugSettings?.projectiles) {
+            console.log("Remote projectile created and added to scene");
+        }
         
         return projectile;
     }

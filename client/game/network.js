@@ -116,7 +116,9 @@ export class NetworkManager {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         
-        console.log("Normalized coordinates:", this.mouse.x, this.mouse.y);
+        if (window.debugSettings?.projectiles) {
+            console.log("Normalized coordinates:", this.mouse.x, this.mouse.y);
+        }
         
         // Use the stored camera reference instead of searching in the scene
         if (!this.camera) {
@@ -126,32 +128,35 @@ export class NetworkManager {
         
         this.raycaster.setFromCamera(this.mouse, this.camera);
         
-        // Visualize the ray for debugging (add this)
-        const rayOrigin = this.camera.position.clone();
-        const rayDirection = new THREE.Vector3();
-        this.raycaster.ray.direction.normalize();
-        rayDirection.copy(this.raycaster.ray.direction);
+        // Debug visualization only if debug is enabled
+        if (window.debugSettings?.projectiles) {
+            // Visualize the ray for debugging
+            const rayOrigin = this.camera.position.clone();
+            const rayDirection = new THREE.Vector3();
+            this.raycaster.ray.direction.normalize();
+            rayDirection.copy(this.raycaster.ray.direction);
 
-        console.log("Ray origin:", rayOrigin.x, rayOrigin.y, rayOrigin.z);
-        console.log("Ray direction:", rayDirection.x, rayDirection.y, rayDirection.z);
+            console.log("Ray origin:", rayOrigin.x, rayOrigin.y, rayOrigin.z);
+            console.log("Ray direction:", rayDirection.x, rayDirection.y, rayDirection.z);
 
-        // Optional: Create a debug line to visualize the ray
-        const rayLength = 50;
-        const rayEndpoint = new THREE.Vector3().copy(rayOrigin).add(rayDirection.multiplyScalar(rayLength));
-        console.log("Ray endpoint:", rayEndpoint.x, rayEndpoint.y, rayEndpoint.z);
+            // Create a debug line to visualize the ray
+            const rayLength = 50;
+            const rayEndpoint = new THREE.Vector3().copy(rayOrigin).add(rayDirection.multiplyScalar(rayLength));
+            console.log("Ray endpoint:", rayEndpoint.x, rayEndpoint.y, rayEndpoint.z);
 
-        // Create a line to visualize the ray
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints([rayOrigin, rayEndpoint]);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        const rayLine = new THREE.Line(lineGeometry, lineMaterial);
-        this.scene.add(rayLine);
+            // Create a line to visualize the ray
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([rayOrigin, rayEndpoint]);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+            const rayLine = new THREE.Line(lineGeometry, lineMaterial);
+            this.scene.add(rayLine);
 
-        // Remove the line after a short delay
-        setTimeout(() => {
-            this.scene.remove(rayLine);
-            lineGeometry.dispose();
-            lineMaterial.dispose();
-        }, 1000);
+            // Remove the line after a short delay
+            setTimeout(() => {
+                this.scene.remove(rayLine);
+                lineGeometry.dispose();
+                lineMaterial.dispose();
+            }, 1000);
+        }
         
         // Create an array of objects to check for intersection
         const remotePlayerMeshes = Object.keys(this.players).map(id => {
@@ -160,23 +165,30 @@ export class NetworkManager {
             return mesh;
         });
         
-        console.log("Checking intersections with", remotePlayerMeshes.length, "players");
+        if (window.debugSettings?.projectiles) {
+            console.log("Checking intersections with", remotePlayerMeshes.length, "players");
+        }
         
         // Check for intersections
         const intersects = this.raycaster.intersectObjects(remotePlayerMeshes);
-        console.log("Intersection results:", intersects.length > 0 ? "Hit" : "Miss", 
-                   intersects.length > 0 ? `(Player: ${intersects[0].object.userData.playerId})` : "");
+        
+        if (window.debugSettings?.projectiles) {
+            console.log("Intersection results:", intersects.length > 0 ? "Hit" : "Miss", 
+                       intersects.length > 0 ? `(Player: ${intersects[0].object.userData.playerId})` : "");
+        }
         
         if (intersects.length > 0) {
             // Found a player to throw a cube at!
             const targetId = intersects[0].object.userData.playerId;
             const targetPosition = intersects[0].object.position.clone();
             
-            console.log(`Throwing cube at player ${targetId} at position:`, 
-                       targetPosition.x, targetPosition.y, targetPosition.z);
-            
-            // Add a visual indicator at the intersection point
-            this.createClickVisualizer(intersects[0].point);
+            if (window.debugSettings?.projectiles) {
+                console.log(`Throwing cube at player ${targetId} at position:`, 
+                           targetPosition.x, targetPosition.y, targetPosition.z);
+                           
+                // Add a visual indicator at the intersection point only in debug mode
+                this.createClickVisualizer(intersects[0].point);
+            }
             
             // Throw cube at this player
             if (this.projectileManager) {

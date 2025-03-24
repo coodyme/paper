@@ -4,7 +4,7 @@ import { Player } from './game/player.js';
 import { ThirdPersonCamera } from './game/camera.js';
 import { NetworkManager } from './game/network.js';
 
-// Add CSS for voice chat controls
+// Add CSS for controls
 const style = document.createElement('style');
 style.textContent = `
     #voice-controls {
@@ -19,7 +19,7 @@ style.textContent = `
         color: #000 !important;
         box-shadow: 0 0 10px #00c3ff;
     }
-    #game-info {
+    #game-controls {
         position: fixed;
         top: 20px;
         left: 20px;
@@ -31,14 +31,41 @@ style.textContent = `
         font-size: 14px;
         z-index: 1000;
     }
+    .debug-checkbox {
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    .debug-label {
+        cursor: pointer;
+        user-select: none;
+    }
 `;
 document.head.appendChild(style);
 
-// Create game info div
-const gameInfo = document.createElement('div');
-gameInfo.id = 'game-info';
-gameInfo.innerHTML = 'Click on another player to throw a cube!';
-document.body.appendChild(gameInfo);
+// Create game controls div with debug checkbox
+const gameControls = document.createElement('div');
+gameControls.id = 'game-controls';
+gameControls.innerHTML = `
+    <div>
+        <input type="checkbox" id="debug-projectiles" class="debug-checkbox">
+        <label for="debug-projectiles" class="debug-label">Debug Projectiles</label>
+    </div>
+`;
+document.body.appendChild(gameControls);
+
+// Create global debug settings object
+window.debugSettings = {
+    projectiles: false
+};
+
+// Add event listener for the debug checkbox
+document.addEventListener('DOMContentLoaded', () => {
+    const debugCheckbox = document.getElementById('debug-projectiles');
+    debugCheckbox.addEventListener('change', function() {
+        window.debugSettings.projectiles = this.checked;
+        console.log('Projectile debugging:', window.debugSettings.projectiles ? 'enabled' : 'disabled');
+    });
+});
 
 // Main game class
 class Game {
@@ -87,14 +114,14 @@ class Game {
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
         
-        // Initialize network manager - PASS THE CAMERA HERE
+        // Initialize network manager
         this.networkManager = new NetworkManager(this.scene, this.camera);
         this.networkManager.connect(this.player);
         
         // Set a reasonable network update rate (10 updates per second)
         this.updateInterval = setInterval(() => {
             if (this.networkManager) {
-                this.networkManager.update();
+                this.networkManager.update(this.clock.getDelta());
             }
         }, 100);
         
