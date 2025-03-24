@@ -6,6 +6,7 @@ import { dirname, join } from 'path';
 import { config } from 'dotenv'; // Import dotenv
 import { PlayerManager } from './managers/PlayerManager.js';
 import configManager from './managers/ConfigManager.js';
+import { AIBotManager } from './managers/AIBotManager.js'; // Add this import at the top
 
 // Load environment variables
 config();
@@ -17,6 +18,14 @@ const __dirname = dirname(__filename);
 // Create Express app
 const app = express();
 const server = createServer(app);
+
+// Add middleware to parse JSON requests
+app.use(express.json());
+
+// Verify API token at startup
+if (!process.env.CLOUDFLARE_API_TOKEN) {
+    console.warn('Warning: CLOUDFLARE_API_TOKEN not found in environment variables. AI bot will use fallback messages.');
+}
 
 // Get server port from config
 const PORT = configManager.get('server.port', 3000);
@@ -31,6 +40,10 @@ const io = new Server(server, {
 
 // Initialize player manager
 const playerManager = new PlayerManager();
+
+// Initialize AIBotManager
+const aiBot = new AIBotManager(io);
+aiBot.initialize();
 
 // API routes
 app.get('/', (req, res) => {
@@ -127,6 +140,23 @@ io.on('connection', (socket) => {
         // Broadcast player left to all other players
         io.emit('playerLeft', socket.id);
     });
+});
+
+// Handle server shutdown
+process.on('SIGINT', () => {
+    console.log('Server shutting down...');
+    if (aiBot) {
+        aiBot.cleanup();
+    }
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('Server terminated...');
+    if (aiBot) {
+        aiBot.cleanup();
+    }
+    process.exit(0);
 });
 
 // Start server

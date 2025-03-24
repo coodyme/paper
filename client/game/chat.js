@@ -218,7 +218,7 @@ export class ChatSystem {
         });
     }
     
-    receiveMessage(senderId, message) {
+    receiveMessage(senderId, message, isBot = false) {
         this.debug?.log('network', `Received chat message from ${senderId}: ${message}`);
         
         // Get player mesh
@@ -226,10 +226,10 @@ export class ChatSystem {
         if (!playerMesh) return;
         
         // Create message text above player
-        this.createMessageLabel(playerMesh, senderId, message);
+        this.createMessageLabel(playerMesh, senderId, message, isBot);
     }
     
-    createMessageLabel(playerMesh, playerId, message) {
+    createMessageLabel(playerMesh, playerId, message, isBot = false) {
         // Remove existing message if one exists
         this.removeExistingMessage(playerId);
         
@@ -246,11 +246,11 @@ export class ChatSystem {
         canvas.height = 40;
         
         // Fill with semi-transparent background
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.fillStyle = isBot ? 'rgba(0, 30, 60, 0.8)' : 'rgba(0, 0, 0, 0.7)';
         context.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Add border
-        context.strokeStyle = '#00c3ff';
+        // Add border with special color for bots
+        context.strokeStyle = isBot ? '#3e64ff' : '#00c3ff';
         context.lineWidth = 2;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         

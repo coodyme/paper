@@ -85,8 +85,22 @@ export class NetworkManager {
         
         // Handle player movement
         this.socket.on('playerMoved', (data) => {
-            this.playerData[data.id].position = data.position; // Update stored position
-            this.playerData[data.id].rotation = data.rotation; // Update stored rotation
+            // Check if player data exists before updating
+            if (!this.playerData[data.id]) {
+                // Initialize player data if it doesn't exist yet
+                this.playerData[data.id] = {
+                    id: data.id,
+                    position: data.position,
+                    rotation: data.rotation,
+                    color: 0xff00ff // Default color
+                };
+            } else {
+                // Update stored position and rotation
+                this.playerData[data.id].position = data.position;
+                this.playerData[data.id].rotation = data.rotation;
+            }
+            
+            // Update remote player visual representation
             this.updateRemotePlayer(data.id, data.position, data.rotation);
         });
         
@@ -118,11 +132,11 @@ export class NetworkManager {
             }
         });
 
-        // Add chat message handler
+        // Handle chat message
         this.socket.on('chatMessage', (data) => {
             this.debug?.logNetworkEvent('chatMessage', data);
             if (this.chatSystem) {
-                this.chatSystem.receiveMessage(data.senderId, data.message);
+                this.chatSystem.receiveMessage(data.senderId, data.message, data.isBot);
             }
         });
     }
@@ -279,17 +293,43 @@ export class NetworkManager {
         // Use player's color or default to magenta
         const color = data.color || 0xff00ff;
         
-        // Create materials for each face with player's color
-        const materials = [
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 })
-        ];
+        // Special handling for AI bots (use different mesh)
+        let mesh;
         
-        const mesh = new THREE.Mesh(geometry, materials);
+        if (data.isBot) {
+            // Create a distinctive bot avatar - a pyramid for AI
+            const botGeometry = new THREE.ConeGeometry(0.7, 1.4, 4);
+            
+            // Create materials with AI-themed colors
+            const botMaterial = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                emissive: color, 
+                emissiveIntensity: 0.5,
+                metalness: 1.0, 
+                roughness: 0.2 
+            });
+            
+            mesh = new THREE.Mesh(botGeometry, botMaterial);
+            
+            // Add particle effect for the AI
+            this.addBotParticleEffect(mesh, color);
+        } else {
+            // Regular player cube for normal players
+            // Create materials for each face with player's color
+            const materials = [
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.3, metalness: 0.9, roughness: 0.2 })
+            ];
+            
+            mesh = new THREE.Mesh(geometry, materials);
+            this.playerMaterials[id] = materials;
+        }
+        
+        // Set position
         mesh.position.set(
             data.position.x,
             data.position.y,
@@ -300,28 +340,65 @@ export class NetworkManager {
             mesh.rotation.y = data.rotation.y;
         }
         
-        // Add a point light to the remote player for glow effect
-        const playerLight = new THREE.PointLight(color, 1, 3);
+        // Add a point light for glow effect
+        const playerLight = new THREE.PointLight(color, data.isBot ? 2 : 1, data.isBot ? 5 : 3);
         playerLight.position.set(0, 0, 0);
         mesh.add(playerLight);
         
         // Add player ID label above the player
-        this.addPlayerLabel(mesh, id);
+        this.addPlayerLabel(mesh, id, data.isBot ? data.name : undefined);
         
         // Store player mesh
         this.players[id] = mesh;
-        this.playerMaterials[id] = materials;
         
         // Add to scene
         this.scene.add(mesh);
+    }
+
+    // Add a new method for bot particle effects
+    addBotParticleEffect(botMesh, color) {
+        const particleGroup = new THREE.Group();
+        const particleCount = 8;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 8, 8),
+                new THREE.MeshBasicMaterial({
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.7
+                })
+            );
+            
+            // Position particles in a circle around the bot
+            const angle = (i / particleCount) * Math.PI * 2;
+            const radius = 0.8;
+            particle.position.set(
+                Math.cos(angle) * radius,
+                0.5,
+                Math.sin(angle) * radius
+            );
+            
+            // Store the original angle for animation
+            particle.userData.angle = angle;
+            particle.userData.radius = radius;
+            particle.userData.speed = 0.001 + Math.random() * 0.002;
+            particle.userData.yOffset = Math.random() * 0.5;
+            
+            particleGroup.add(particle);
+        }
+        
+        botMesh.add(particleGroup);
+        botMesh.userData.particleGroup = particleGroup;
     }
     
     /**
      * Create and add a text label above the player
      * @param {THREE.Mesh} playerMesh - The player's mesh
      * @param {string} id - Player ID to display
+     * @param {string} customName - Custom name to display (optional)
      */
-    addPlayerLabel(playerMesh, id) {
+    addPlayerLabel(playerMesh, id, customName = null) {
         // Create a canvas for the text
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -337,13 +414,13 @@ export class NetworkManager {
         context.lineWidth = 2;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         
-        // Add text - use a shortened version of the ID for display
-        const shortId = id.substring(0, 6);
+        // Add text - use custom name or a shortened version of the ID
+        const displayText = customName || id.substring(0, 6);
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.fillStyle = '#ffffff';
-        context.fillText(shortId, canvas.width / 2, canvas.height / 2);
+        context.fillText(displayText, canvas.width / 2, canvas.height / 2);
         
         // Create texture and material
         const texture = new THREE.CanvasTexture(canvas);
@@ -377,6 +454,11 @@ export class NetworkManager {
      * @param {Object} rotation - New rotation
      */
     updateRemotePlayer(id, position, rotation) {
+        // Check if player exists, if not create it
+        if (!this.players[id] && this.playerData[id]) {
+            this.addRemotePlayer(id, this.playerData[id]);
+        }
+        
         if (!this.players[id]) return;
         
         // Get player mesh
@@ -404,6 +486,18 @@ export class NetworkManager {
         if (playerMesh.userData.label && this.camera) {
             // Make sure the label always faces the camera
             playerMesh.userData.label.lookAt(this.camera.position);
+        }
+        
+        // Update particle effects for bots
+        if (playerMesh.userData.particleGroup) {
+            const particleGroup = playerMesh.userData.particleGroup;
+            particleGroup.children.forEach(particle => {
+                // Update particle position in a circular orbit
+                particle.userData.angle += particle.userData.speed;
+                particle.position.x = Math.cos(particle.userData.angle) * particle.userData.radius;
+                particle.position.z = Math.sin(particle.userData.angle) * particle.userData.radius;
+                particle.position.y = 0.5 + Math.sin(Date.now() * 0.001 + particle.userData.yOffset) * 0.2;
+            });
         }
     }
     
