@@ -28,6 +28,87 @@ export class World {
         floor.rotation.x = -Math.PI / 2;
         floor.position.y = -0.01; // Slightly below the grid
         this.scene.add(floor);
+        
+        // Create ceiling with the same material
+        const ceilingGeometry = new THREE.PlaneGeometry(gridSize, gridSize);
+        const ceiling = new THREE.Mesh(ceilingGeometry, floorMaterial.clone());
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.y = 30; // Positioned high above
+        this.scene.add(ceiling);
+        
+        // Create walls using the same material
+        this.createWalls(gridSize, floorMaterial);
+    }
+    
+    createWalls(size, material) {
+        // Create four walls around the grid area
+        const wallHeight = 30;
+        const halfSize = size / 2;
+        
+        // Create wall geometries
+        const wallGeometry = new THREE.PlaneGeometry(size, wallHeight);
+        
+        // North wall
+        const northWall = new THREE.Mesh(wallGeometry, material.clone());
+        northWall.position.set(0, wallHeight / 2, -halfSize);
+        northWall.rotation.y = Math.PI;
+        this.scene.add(northWall);
+        
+        // South wall
+        const southWall = new THREE.Mesh(wallGeometry, material.clone());
+        southWall.position.set(0, wallHeight / 2, halfSize);
+        this.scene.add(southWall);
+        
+        // East wall
+        const eastWall = new THREE.Mesh(wallGeometry, material.clone());
+        eastWall.position.set(halfSize, wallHeight / 2, 0);
+        eastWall.rotation.y = -Math.PI / 2;
+        this.scene.add(eastWall);
+        
+        // West wall
+        const westWall = new THREE.Mesh(wallGeometry, material.clone());
+        westWall.position.set(-halfSize, wallHeight / 2, 0);
+        westWall.rotation.y = Math.PI / 2;
+        this.scene.add(westWall);
+        
+        // Add grid lines to walls for visual effect
+        this.addGridToWalls(northWall, size, wallHeight);
+        this.addGridToWalls(southWall, size, wallHeight);
+        this.addGridToWalls(eastWall, size, wallHeight);
+        this.addGridToWalls(westWall, size, wallHeight);
+    }
+    
+    addGridToWalls(wall, width, height) {
+        // Create a grid of glowing lines on the walls
+        const gridMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.3
+        });
+        
+        // Horizontal lines
+        const horizontalSpacing = 5;
+        for (let y = 0; y <= height; y += horizontalSpacing) {
+            const points = [
+                new THREE.Vector3(-width/2, y - height/2, 0.01),
+                new THREE.Vector3(width/2, y - height/2, 0.01)
+            ];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, gridMaterial);
+            wall.add(line);
+        }
+        
+        // Vertical lines
+        const verticalSpacing = 5;
+        for (let x = 0; x <= width; x += verticalSpacing) {
+            const points = [
+                new THREE.Vector3(x - width/2, -height/2, 0.01),
+                new THREE.Vector3(x - width/2, height/2, 0.01)
+            ];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, gridMaterial);
+            wall.add(line);
+        }
     }
     
     createLights() {
@@ -74,9 +155,8 @@ export class World {
     }
     
     createEnvironment() {
-        // Add cyberpunk elements
+        // Keep only the holographic billboards
         this.addHolographicBillboards();
-        this.addCyberpunkBuildings();
     }
     
     addHolographicBillboards() {
@@ -91,12 +171,12 @@ export class World {
         billboardTexts.forEach((text, i) => {
             const billboard = this.createHolographicText(text);
             
-            // Position in a circle around the play area
+            // Position in a circle around the play area, but closer to the walls
             const angle = (i / billboardTexts.length) * Math.PI * 2;
-            const distance = 20;
+            const distance = 40; // Position closer to the walls
             billboard.position.set(
                 Math.cos(angle) * distance,
-                5 + Math.random() * 5,
+                10 + Math.random() * 5,
                 Math.sin(angle) * distance
             );
             
@@ -156,107 +236,5 @@ export class World {
         for (let i = 0; i < height; i += 4) {
             context.fillRect(0, i, width, 2);
         }
-    }
-    
-    addCyberpunkBuildings() {
-        const buildingCount = 15;
-        
-        for (let i = 0; i < buildingCount; i++) {
-            // Random position around the arena
-            const angle = (i / buildingCount) * Math.PI * 2;
-            const distance = 30 + Math.random() * 20;
-            const x = Math.cos(angle) * distance;
-            const z = Math.sin(angle) * distance;
-            
-            // Random height
-            const height = 10 + Math.random() * 30;
-            
-            // Create building
-            this.createBuilding(x, z, height);
-        }
-    }
-    
-    createBuilding(x, z, height) {
-        // Create geometry
-        const width = 3 + Math.random() * 5;
-        const depth = 3 + Math.random() * 5;
-        const geometry = new THREE.BoxGeometry(width, height, depth);
-        
-        // Create material with emissive windows
-        const material = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            metalness: 0.8,
-            roughness: 0.2,
-            emissive: new THREE.Color(0.1, 0.1, 0.2)
-        });
-        
-        // Create mesh
-        const building = new THREE.Mesh(geometry, material);
-        building.position.set(x, height / 2, z);
-        
-        // Add emissive windows
-        this.addBuildingWindows(building, width, height, depth);
-        
-        this.scene.add(building);
-    }
-    
-    addBuildingWindows(building, width, height, depth) {
-        // Window colors
-        const colors = [0x00ffff, 0xff00ff, 0xffff00];
-        
-        // Create windows on each face
-        const sides = [
-            { dir: 'x', size: width, sign: 1 },
-            { dir: 'x', size: width, sign: -1 },
-            { dir: 'z', size: depth, sign: 1 },
-            { dir: 'z', size: depth, sign: -1 }
-        ];
-        
-        sides.forEach(side => {
-            const windowCount = Math.floor(height / 2); // Windows per column
-            const windowSize = 0.3;
-            
-            for (let row = 0; row < windowCount; row++) {
-                const windowsPerRow = side.dir === 'x' 
-                    ? Math.floor(depth / 1.5) 
-                    : Math.floor(width / 1.5);
-                
-                for (let col = 0; col < windowsPerRow; col++) {
-                    // Don't create a window for every position (random pattern)
-                    if (Math.random() > 0.7) continue;
-                    
-                    const windowGeometry = new THREE.BoxGeometry(
-                        side.dir === 'x' ? 0.1 : windowSize,
-                        windowSize,
-                        side.dir === 'z' ? 0.1 : windowSize
-                    );
-                    
-                    // Random color from palette
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-                    const windowMaterial = new THREE.MeshBasicMaterial({
-                        color: color,
-                        transparent: true,
-                        opacity: 0.8
-                    });
-                    
-                    const window = new THREE.Mesh(windowGeometry, windowMaterial);
-                    
-                    // Position window on building face
-                    const offsetY = row * 2 - height / 2 + 1;
-                    let offsetX, offsetZ;
-                    
-                    if (side.dir === 'x') {
-                        offsetX = (side.size / 2) * side.sign;
-                        offsetZ = (col * 1.5) - (depth / 2) + 0.75;
-                    } else {
-                        offsetZ = (side.size / 2) * side.sign;
-                        offsetX = (col * 1.5) - (width / 2) + 0.75;
-                    }
-                    
-                    window.position.set(offsetX, offsetY, offsetZ);
-                    building.add(window);
-                }
-            }
-        });
     }
 }
