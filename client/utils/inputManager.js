@@ -119,7 +119,7 @@ export class InputManager {
         infoText.style.fontFamily = 'Arial, sans-serif';
         infoText.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
         infoText.style.pointerEvents = 'none'; // Allow clicks to pass through
-        infoText.innerHTML = 'JOYSTICK:<br>Inner zone = Move<br>Outer zone = Rotate<br>Tap elsewhere to throw cubes';
+        infoText.innerHTML = 'JOYSTICK:<br>Inner zone = Move<br>Outer zone = Rotate<br>Tap elsewhere to throw cubes<br>Find the JUKEBOX for music!';
         
         // Fade out info text after 5 seconds
         setTimeout(() => {

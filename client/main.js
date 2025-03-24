@@ -134,8 +134,8 @@ class Game {
         // Initialize camera controller
         this.thirdPersonCamera = new ThirdPersonCamera(this.camera);
         
-        // Initialize world
-        this.world = new World(this.scene);
+        // Initialize world - pass null for networkManager initially
+        this.world = new World(this.scene, null);
         
         // Initialize player with config-based speeds
         this.player = new Player(this.scene);
@@ -148,7 +148,18 @@ class Game {
         
         // Initialize network manager
         this.networkManager = new NetworkManager(this.scene, this.camera);
+        
+        // Give network manager reference to world for jukebox interactions
+        this.networkManager.world = this.world;
+        
+        // Now update world with network manager reference
+        this.world.networkManager = this.networkManager;
+        
+        // Connect to network
         this.networkManager.connect(this.player);
+        
+        // Initialize jukebox now that we have network
+        this.world.initJukebox();
         
         // Set network update rate from configuration
         const updateRate = configLoader.get('network.updateRate', 100);

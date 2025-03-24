@@ -27,6 +27,11 @@ export class NetworkManager {
         // Setup click event listener for throwing cubes
         document.addEventListener('click', this.onMouseClick.bind(this));
         
+        // Add right-click event prevention (to allow right-click for jukebox)
+        document.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+        
         // Add touch event for mobile devices
         if (this.isMobile) {
             document.addEventListener('touchend', this.onTouchEnd.bind(this), false);
@@ -157,6 +162,9 @@ export class NetworkManager {
     onMouseClick(event) {
         this.debug?.log('projectiles', `Mouse click at (${event.clientX}, ${event.clientY})`);
         
+        // Store right click state
+        this.rightClickPressed = event.button === 2;
+        
         // Calculate mouse position in normalized device coordinates
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -183,6 +191,18 @@ export class NetworkManager {
             
             // Visualize the ray for debugging
             this.debug.visualizeRaycast(rayOrigin, rayDirection);
+        }
+        
+        // Check for jukebox interaction first
+        if (this.world && this.world.jukebox && this.world.jukebox.mesh) {
+            const jukeboxIntersects = this.raycaster.intersectObject(this.world.jukebox.mesh);
+            
+            if (jukeboxIntersects.length > 0) {
+                // Detected a click on the jukebox
+                const rightClick = this.rightClickPressed || false;
+                this.world.jukebox.handleClick(rightClick);
+                return; // Stop processing after jukebox interaction
+            }
         }
         
         // Create an array of objects to check for intersection

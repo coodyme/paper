@@ -1,15 +1,25 @@
 import * as THREE from 'three';
 import { BillboardManager } from './billboard.js';
+import { Jukebox } from './jukebox.js'; // Import Jukebox
 import configLoader from '../utils/configLoader.js';
 
 export class World {
-    constructor(scene) {
+    constructor(scene, networkManager) {
         this.scene = scene;
+        this.networkManager = networkManager;
         this.billboardManager = new BillboardManager(scene);
+        this.jukebox = null; // Will be initialized later when network is available
         
         this.createGrid();
         this.createLights();
         this.createEnvironment();
+    }
+    
+    // Add method to initialize jukebox (after network is available)
+    initJukebox() {
+        if (!this.jukebox && this.networkManager) {
+            this.jukebox = new Jukebox(this.scene, this.networkManager);
+        }
     }
     
     createGrid() {
@@ -165,17 +175,25 @@ export class World {
         this.billboardManager.createBillboards();
     }
     
-    // Add update method to update billboards
+    // Update the update method to include jukebox
     update(deltaTime) {
         if (this.billboardManager) {
             this.billboardManager.update(deltaTime);
         }
+        
+        if (this.jukebox) {
+            this.jukebox.update(deltaTime);
+        }
     }
     
-    // Add cleanup method for proper resource management
+    // Update cleanup method to include jukebox
     cleanup() {
         if (this.billboardManager) {
             this.billboardManager.cleanup();
+        }
+        
+        if (this.jukebox) {
+            this.jukebox.cleanup();
         }
     }
 }

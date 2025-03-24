@@ -7,6 +7,8 @@ import { config } from 'dotenv'; // Import dotenv
 import { PlayerManager } from './managers/PlayerManager.js';
 import configManager from './managers/ConfigManager.js';
 import { AIBotManager } from './managers/AIBotManager.js'; // Add this import at the top
+import fs from 'fs';
+import path from 'path';
 
 // Load environment variables
 config();
@@ -45,6 +47,33 @@ const playerManager = new PlayerManager();
 const aiBot = new AIBotManager(io);
 aiBot.initialize();
 
+// Add jukebox state after player manager
+const jukeboxState = {
+    isPlaying: false,
+    trackIndex: 0,
+    tracks: []
+};
+
+// Function to load available audio tracks
+function loadAudioTracks() {
+    try {
+        const audioDir = path.join(dirname(__dirname), 'client', 'public', 'audio');
+        const files = fs.readdirSync(audioDir);
+        jukeboxState.tracks = files.filter(file => 
+            file.endsWith('.mp3') || 
+            file.endsWith('.wav') || 
+            file.endsWith('.ogg')
+        );
+        console.log(`Loaded ${jukeboxState.tracks.length} audio tracks`);
+    } catch (error) {
+        console.error('Error loading audio tracks:', error);
+        jukeboxState.tracks = [];
+    }
+}
+
+// Load audio tracks on startup
+loadAudioTracks();
+
 // API routes
 app.get('/', (req, res) => {
     res.status(200).send('Paper Game Server');
@@ -77,6 +106,15 @@ io.on('connection', (socket) => {
     
     // Broadcast new player to all other players
     socket.broadcast.emit('playerJoined', player);
+    
+    // Send audio tracks to new player
+    socket.emit('audioTracks', jukeboxState.tracks);
+    
+    // Send current jukebox state to new player
+    socket.emit('jukeboxUpdate', {
+        isPlaying: jukeboxState.isPlaying,
+        trackIndex: jukeboxState.trackIndex
+    });
     
     // Handle player movement
     socket.on('playerMove', (data) => {
@@ -130,6 +168,31 @@ io.on('connection', (socket) => {
         
         // Broadcast the message to all other players
         socket.broadcast.emit('chatMessage', messageData);
+    });
+    
+    // Handle jukebox control
+    socket.on('jukeboxControl', (data) => {
+        console.log(`Jukebox control from ${socket.id}:`, data);
+        
+        switch(data.action) {
+            case 'play':
+                jukeboxState.isPlaying = true;
+                jukeboxState.trackIndex = data.trackIndex;
+                break;
+            case 'pause':
+                jukeboxState.isPlaying = false;
+                break;
+            case 'next':
+                jukeboxState.trackIndex = data.trackIndex;
+                jukeboxState.isPlaying = true; // Auto-play when changing tracks
+                break;
+        }
+        
+        // Broadcast jukebox state to all clients
+        io.emit('jukeboxUpdate', {
+            isPlaying: jukeboxState.isPlaying,
+            trackIndex: jukeboxState.trackIndex
+        });
     });
     
     // Handle player disconnection
