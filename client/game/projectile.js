@@ -18,7 +18,7 @@ export class Projectile {
     
     createProjectile() {
         // Create a small cube as projectile
-        const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
         
         // Use bright, glowing material
         const material = new THREE.MeshStandardMaterial({ 
@@ -188,6 +188,10 @@ export class ProjectileManager {
         
         // Create projectile
         const projectile = new Projectile(this.scene, startPos, direction, color);
+        // Store target ID to know who this projectile is aimed at
+        projectile.targetId = throwData.targetId;
+        // Store source ID to know who threw this projectile
+        projectile.sourceId = throwData.sourceId;
         this.projectiles.push(projectile);
         
         // Visualize projectile path if debugging enabled
@@ -207,41 +211,48 @@ export class ProjectileManager {
         this.projectiles.forEach(projectile => {
             projectile.update(deltaTime);
             
-            // Check collisions with players
-            if (this.networkManager.localPlayer) {
-                // Check if hit local player
-                if (projectile.checkCollision('local', this.networkManager.localPlayer.mesh)) {
-                    // Visual effect for being hit
-                    this.showHitEffect(this.networkManager.localPlayer.mesh);
-                    this.debug?.log('physics', `Local player hit by projectile`);
-                    
-                    // Show collision visualization if debugging enabled
-                    if (this.debug?.enabled.physics) {
-                        this.debug.visualizeCollision(this.networkManager.localPlayer.mesh.position);
-                    }
+            // Check collisions
+            this.checkProjectileCollisions(projectile);
+        });
+    }
+    
+    // Check projectile collisions with all players
+    checkProjectileCollisions(projectile) {
+        // Check if hit local player
+        if (this.networkManager.localPlayer) {
+            if (projectile.checkCollision('local', this.networkManager.localPlayer.mesh)) {
+                // Visual effect for being hit - on the LOCAL player's mesh
+                this.showHitEffect(this.networkManager.localPlayer.mesh);
+                this.debug?.log('physics', `Local player hit by projectile from ${projectile.sourceId}`);
+                
+                // Show collision visualization if debugging enabled
+                if (this.debug?.enabled.physics) {
+                    this.debug.visualizeCollision(this.networkManager.localPlayer.mesh.position);
+                }
+                
+                return; // Exit early, projectile was destroyed
+            }
+        }
+        
+        // Check collisions with remote players
+        Object.keys(this.networkManager.players || {}).forEach(playerId => {
+            const playerMesh = this.networkManager.players[playerId];
+            if (projectile.checkCollision(playerId, playerMesh)) {
+                // Visual effect for being hit - on the TARGET player's mesh
+                this.showHitEffect(playerMesh);
+                this.debug?.log('physics', `Remote player ${playerId} hit by projectile from ${projectile.sourceId || 'unknown'}`);
+                
+                // Show collision visualization if debugging enabled
+                if (this.debug?.enabled.physics) {
+                    this.debug.visualizeCollision(playerMesh.position);
                 }
             }
-            
-            // Check collisions with remote players
-            Object.keys(this.networkManager.players || {}).forEach(playerId => {
-                const playerMesh = this.networkManager.players[playerId];
-                if (projectile.checkCollision(playerId, playerMesh)) {
-                    // Visual effect for being hit
-                    this.showHitEffect(playerMesh);
-                    this.debug?.log('physics', `Remote player ${playerId} hit by projectile`);
-                    
-                    // Show collision visualization if debugging enabled
-                    if (this.debug?.enabled.physics) {
-                        this.debug.visualizeCollision(playerMesh.position);
-                    }
-                }
-            });
         });
     }
     
     // Create a visual effect when a player is hit
-    showHitEffect(playerMesh) {
-        if (!playerMesh) return;
+    showHitEffect(targetMesh) {
+        if (!targetMesh) return;
         
         // Create a short-lived explosion particle effect
         const explosion = new THREE.Group();
@@ -274,8 +285,8 @@ export class ProjectileManager {
             explosion.add(particle);
         }
         
-        // Position explosion at player
-        explosion.position.copy(playerMesh.position);
+        // Position explosion at the target player's position
+        explosion.position.copy(targetMesh.position);
         this.scene.add(explosion);
         
         // Animate explosion
