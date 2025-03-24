@@ -3,6 +3,7 @@ import { World } from './game/world.js';
 import { Player } from './game/player.js';
 import { ThirdPersonCamera } from './game/camera.js';
 import { NetworkManager } from './game/network.js';
+import { initDebug } from './utils/debug.js';
 
 // Add CSS for controls
 const style = document.createElement('style');
@@ -19,7 +20,7 @@ style.textContent = `
         color: #000 !important;
         box-shadow: 0 0 10px #00c3ff;
     }
-    #game-controls {
+    #debug-controls {
         position: fixed;
         top: 20px;
         left: 20px;
@@ -42,30 +43,12 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Create game controls div with debug checkbox
-const gameControls = document.createElement('div');
-gameControls.id = 'game-controls';
-gameControls.innerHTML = `
-    <div>
-        <input type="checkbox" id="debug-projectiles" class="debug-checkbox">
-        <label for="debug-projectiles" class="debug-label">Debug Projectiles</label>
-    </div>
-`;
-document.body.appendChild(gameControls);
-
-// Create global debug settings object
+// Create global debug settings object for backward compatibility
 window.debugSettings = {
-    projectiles: false
+    projectiles: false,
+    physics: false,
+    network: false
 };
-
-// Add event listener for the debug checkbox
-document.addEventListener('DOMContentLoaded', () => {
-    const debugCheckbox = document.getElementById('debug-projectiles');
-    debugCheckbox.addEventListener('change', function() {
-        window.debugSettings.projectiles = this.checked;
-        console.log('Projectile debugging:', window.debugSettings.projectiles ? 'enabled' : 'disabled');
-    });
-});
 
 // Main game class
 class Game {
@@ -87,6 +70,7 @@ class Game {
         this.thirdPersonCamera = null;
         this.networkManager = null;
         this.updateInterval = null;
+        this.debugSystem = null;
         
         this.init();
     }
@@ -113,6 +97,9 @@ class Game {
         
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
+        
+        // Initialize debug system
+        this.debugSystem = initDebug(this.scene);
         
         // Initialize network manager
         this.networkManager = new NetworkManager(this.scene, this.camera);

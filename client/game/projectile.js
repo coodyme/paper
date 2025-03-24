@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getDebugger } from '../utils/debug.js';
 
 export class Projectile {
     constructor(scene, position, direction, color = 0xff00ff) {
@@ -106,6 +107,7 @@ export class ProjectileManager {
         this.scene = scene;
         this.networkManager = networkManager;
         this.projectiles = [];
+        this.debug = getDebugger();
     }
     
     // Create a new projectile from the player towards a target
@@ -113,10 +115,6 @@ export class ProjectileManager {
         if (!this.networkManager || !this.networkManager.localPlayer) {
             console.error("Cannot throw cube - networkManager or localPlayer not initialized");
             return;
-        }
-        
-        if (window.debugSettings?.projectiles) {
-            console.log(`ProjectileManager: Throwing cube at player ${targetId}`);
         }
         
         const player = this.networkManager.localPlayer;
@@ -130,18 +128,16 @@ export class ProjectileManager {
             .subVectors(targetPosition, startPos)
             .normalize();
         
-        if (window.debugSettings?.projectiles) {
-            console.log("Projectile starting at:", startPos.x, startPos.y, startPos.z);
-            console.log("Projectile direction:", direction.x, direction.y, direction.z);
+        this.debug?.log('projectiles', `Throwing cube at player ${targetId} from (${startPos.x.toFixed(2)}, ${startPos.y.toFixed(2)}, ${startPos.z.toFixed(2)})`);
+        
+        // Visualize projectile path if debugging enabled
+        if (this.debug?.enabled.projectiles) {
+            this.debug.visualizeRaycast(startPos, direction, 20, 2000);
         }
         
         // Create projectile
         const projectile = new Projectile(this.scene, startPos, direction);
         this.projectiles.push(projectile);
-        
-        if (window.debugSettings?.projectiles) {
-            console.log("Local projectile created");
-        }
         
         // Send throw event to server
         if (this.networkManager.socket) {
@@ -159,10 +155,7 @@ export class ProjectileManager {
                 }
             };
             
-            if (window.debugSettings?.projectiles) {
-                console.log("Sending throwCube event to server:", throwData);
-            }
-            
+            this.debug?.log('network', `Sending throwCube event`, throwData);
             this.networkManager.socket.emit('throwCube', throwData);
         } else {
             console.error("Socket not connected, cannot send throw event");
@@ -171,10 +164,7 @@ export class ProjectileManager {
     
     // Create a projectile from remote player throw data
     createRemoteProjectile(throwData) {
-        if (window.debugSettings?.projectiles) {
-            console.log("Received remote cube throw from player:", throwData.sourceId);
-            console.log("Remote cube throw data:", throwData);
-        }
+        this.debug?.log('projectiles', `Creating remote projectile from player ${throwData.sourceId}`);
         
         // Get starting position
         const startPos = new THREE.Vector3(
@@ -194,19 +184,15 @@ export class ProjectileManager {
         let color = 0xff00ff; // Default magenta
         if (this.networkManager.playerData[throwData.sourceId]) {
             color = this.networkManager.playerData[throwData.sourceId].color;
-            if (window.debugSettings?.projectiles) {
-                console.log(`Using player color: ${color.toString(16)}`);
-            }
-        } else if (window.debugSettings?.projectiles) {
-            console.log("No player data found for source player, using default color");
         }
         
         // Create projectile
         const projectile = new Projectile(this.scene, startPos, direction, color);
         this.projectiles.push(projectile);
         
-        if (window.debugSettings?.projectiles) {
-            console.log("Remote projectile created and added to scene");
+        // Visualize projectile path if debugging enabled
+        if (this.debug?.enabled.projectiles) {
+            this.debug.visualizeRaycast(startPos, direction, 20, 2000);
         }
         
         return projectile;
@@ -227,6 +213,12 @@ export class ProjectileManager {
                 if (projectile.checkCollision('local', this.networkManager.localPlayer.mesh)) {
                     // Visual effect for being hit
                     this.showHitEffect(this.networkManager.localPlayer.mesh);
+                    this.debug?.log('physics', `Local player hit by projectile`);
+                    
+                    // Show collision visualization if debugging enabled
+                    if (this.debug?.enabled.physics) {
+                        this.debug.visualizeCollision(this.networkManager.localPlayer.mesh.position);
+                    }
                 }
             }
             
@@ -236,6 +228,12 @@ export class ProjectileManager {
                 if (projectile.checkCollision(playerId, playerMesh)) {
                     // Visual effect for being hit
                     this.showHitEffect(playerMesh);
+                    this.debug?.log('physics', `Remote player ${playerId} hit by projectile`);
+                    
+                    // Show collision visualization if debugging enabled
+                    if (this.debug?.enabled.physics) {
+                        this.debug.visualizeCollision(playerMesh.position);
+                    }
                 }
             });
         });
