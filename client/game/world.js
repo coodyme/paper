@@ -1,16 +1,20 @@
 import * as THREE from 'three';
+import { BillboardManager } from './billboard.js';
+import configLoader from '../utils/configLoader.js';
 
 export class World {
     constructor(scene) {
         this.scene = scene;
+        this.billboardManager = new BillboardManager(scene);
+        
         this.createGrid();
         this.createLights();
         this.createEnvironment();
     }
     
     createGrid() {
-        // Create grid
-        const gridSize = 100;
+        // Get grid size from configuration
+        const gridSize = configLoader.get('game.gridSize', 100);
         const gridDivisions = 100;
         const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x00ffff, 0x00ffff);
         this.scene.add(gridHelper);
@@ -33,49 +37,51 @@ export class World {
         const ceilingGeometry = new THREE.PlaneGeometry(gridSize, gridSize);
         const ceiling = new THREE.Mesh(ceilingGeometry, floorMaterial.clone());
         ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.y = 30; // Positioned high above
+        
+        // Get wall height from configuration
+        const wallHeight = configLoader.get('game.wallHeight', 30);
+        ceiling.position.y = wallHeight; // Positioned high above
         this.scene.add(ceiling);
         
         // Create walls using the same material
-        this.createWalls(gridSize, floorMaterial);
+        this.createWalls(gridSize, floorMaterial, wallHeight);
     }
     
-    createWalls(size, material) {
+    createWalls(size, material, height) {
         // Create four walls around the grid area
-        const wallHeight = 30;
         const halfSize = size / 2;
         
         // Create wall geometries
-        const wallGeometry = new THREE.PlaneGeometry(size, wallHeight);
+        const wallGeometry = new THREE.PlaneGeometry(size, height);
         
         // North wall
         const northWall = new THREE.Mesh(wallGeometry, material.clone());
-        northWall.position.set(0, wallHeight / 2, -halfSize);
+        northWall.position.set(0, height / 2, -halfSize);
         northWall.rotation.y = Math.PI;
         this.scene.add(northWall);
         
         // South wall
         const southWall = new THREE.Mesh(wallGeometry, material.clone());
-        southWall.position.set(0, wallHeight / 2, halfSize);
+        southWall.position.set(0, height / 2, halfSize);
         this.scene.add(southWall);
         
         // East wall
         const eastWall = new THREE.Mesh(wallGeometry, material.clone());
-        eastWall.position.set(halfSize, wallHeight / 2, 0);
+        eastWall.position.set(halfSize, height / 2, 0);
         eastWall.rotation.y = -Math.PI / 2;
         this.scene.add(eastWall);
         
         // West wall
         const westWall = new THREE.Mesh(wallGeometry, material.clone());
-        westWall.position.set(-halfSize, wallHeight / 2, 0);
+        westWall.position.set(-halfSize, height / 2, 0);
         westWall.rotation.y = Math.PI / 2;
         this.scene.add(westWall);
         
         // Add grid lines to walls for visual effect
-        this.addGridToWalls(northWall, size, wallHeight);
-        this.addGridToWalls(southWall, size, wallHeight);
-        this.addGridToWalls(eastWall, size, wallHeight);
-        this.addGridToWalls(westWall, size, wallHeight);
+        this.addGridToWalls(northWall, size, height);
+        this.addGridToWalls(southWall, size, height);
+        this.addGridToWalls(eastWall, size, height);
+        this.addGridToWalls(westWall, size, height);
     }
     
     addGridToWalls(wall, width, height) {
@@ -155,86 +161,21 @@ export class World {
     }
     
     createEnvironment() {
-        // Keep only the holographic billboards
-        this.addHolographicBillboards();
+        // Use the billboard manager to create billboards
+        this.billboardManager.createBillboards();
     }
     
-    addHolographicBillboards() {
-        const billboardTexts = [
-            "NEXUS CORP", 
-            "NEURAL LINK", 
-            "CYBER ENHANCE", 
-            "DIGITAL DREAMS", 
-            "NEON LIFE"
-        ];
-        
-        billboardTexts.forEach((text, i) => {
-            const billboard = this.createHolographicText(text);
-            
-            // Position in a circle around the play area, but closer to the walls
-            const angle = (i / billboardTexts.length) * Math.PI * 2;
-            const distance = 40; // Position closer to the walls
-            billboard.position.set(
-                Math.cos(angle) * distance,
-                10 + Math.random() * 5,
-                Math.sin(angle) * distance
-            );
-            
-            // Rotate to face center
-            billboard.lookAt(0, billboard.position.y, 0);
-            
-            this.scene.add(billboard);
-        });
+    // Add update method to update billboards
+    update(deltaTime) {
+        if (this.billboardManager) {
+            this.billboardManager.update(deltaTime);
+        }
     }
     
-    createHolographicText(text) {
-        // Create canvas for text
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 512;
-        canvas.height = 256;
-        
-        // Fill with semi-transparent background
-        context.fillStyle = 'rgba(0, 0, 50, 0.7)';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Add glowing border
-        const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
-        gradient.addColorStop(0, '#00ffff');
-        gradient.addColorStop(0.5, '#ff00ff');
-        gradient.addColorStop(1, '#00ffff');
-        
-        context.strokeStyle = gradient;
-        context.lineWidth = 8;
-        context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
-        
-        // Add text
-        context.font = 'bold 72px "Courier New"';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillStyle = '#ffffff';
-        context.fillText(text, canvas.width / 2, canvas.height / 2);
-        
-        // Add scanlines effect
-        this.addScanlines(context, canvas.width, canvas.height);
-        
-        // Create texture and material
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-        
-        // Create mesh
-        const geometry = new THREE.PlaneGeometry(10, 5);
-        return new THREE.Mesh(geometry, material);
-    }
-    
-    addScanlines(context, width, height) {
-        context.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        for (let i = 0; i < height; i += 4) {
-            context.fillRect(0, i, width, 2);
+    // Add cleanup method for proper resource management
+    cleanup() {
+        if (this.billboardManager) {
+            this.billboardManager.cleanup();
         }
     }
 }

@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import { InputManager } from '../utils/inputManager.js';
+import configLoader from '../utils/configLoader.js';
 
 export class Player {
     constructor(scene) {
         this.scene = scene;
         this.mesh = null;
-        this.speed = 0.15;
-        this.rotationSpeed = 0.05;
+        
+        // Get speeds from configuration
+        this.speed = configLoader.get('game.physics.playerSpeed', 0.15);
+        this.rotationSpeed = configLoader.get('game.physics.rotationSpeed', 0.05);
+        
         this.velocity = 0;
         this.moveForward = false;
         this.moveBackward = false;

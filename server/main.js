@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv'; // Import dotenv
 import { PlayerManager } from './managers/PlayerManager.js';
+import configManager from './managers/ConfigManager.js';
 
 // Load environment variables
 config();
@@ -16,6 +17,9 @@ const __dirname = dirname(__filename);
 // Create Express app
 const app = express();
 const server = createServer(app);
+
+// Get server port from config
+const PORT = configManager.get('server.port', 3000);
 
 // Initialize Socket.IO
 const io = new Server(server, {
@@ -40,6 +44,12 @@ app.get('/status', (req, res) => {
         players: Object.keys(playerManager.players).length,
         uptime: process.uptime()
     });
+});
+
+// API endpoint to expose configuration to the client
+app.get('/api/config', (req, res) => {
+    // Only expose safe configuration to the client
+    res.json(configManager.getClientConfig());
 });
 
 // Socket.IO connection handler
@@ -120,7 +130,7 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Game configuration: ${configManager.get('game.gridSize')}x${configManager.get('game.gridSize')} grid`);
 });

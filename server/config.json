@@ -1,0 +1,33 @@
+{
+  "server": {
+    "port": 5174,
+    "maxPlayers": 100,
+    "playerTimeout": 60000
+  },
+  "game": {
+    "gridSize": 100,
+    "wallHeight": 30,
+    "spawnRadius": 20,
+    "physics": {
+      "projectileSpeed": 0.3,
+      "projectileLifetime": 5000,
+      "playerSpeed": 0.15,
+      "rotationSpeed": 0.05
+    }
+  },
+  "ui": {
+    "billboardMessages": [
+      "WELCOME TO PAPER",
+      "EXPLORE THE GRID",
+      "CONNECT WITH FRIENDS",
+      "THROW CUBES",
+      "VOICE CHAT ENABLED"
+    ],
+    "chatMessageDuration": 5000,
+    "instructionsDuration": 3000
+  },
+  "network": {
+    "updateRate": 100,
+    "maxDistance": 20
+  }
+}

@@ -1,6 +1,9 @@
+import configManager from './ConfigManager.js';
+
 export class PlayerManager {
     constructor() {
         this.players = {};
+        this.spawnRadius = configManager.get('game.spawnRadius', 20);
     }
     
     /**
@@ -9,11 +12,14 @@ export class PlayerManager {
      * @returns {Object} - Player data
      */
     addPlayer(id) {
-        // Generate random spawn position
+        // Generate random spawn position within configured radius
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * this.spawnRadius;
+        
         const position = {
-            x: (Math.random() - 0.5) * 20,
+            x: Math.cos(angle) * distance,
             y: 0.5,
-            z: (Math.random() - 0.5) * 20
+            z: Math.sin(angle) * distance
         };
         
         const rotation = {

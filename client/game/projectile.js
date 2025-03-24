@@ -1,15 +1,19 @@
 import * as THREE from 'three';
 import { getDebugger } from '../utils/debug.js';
+import configLoader from '../utils/configLoader.js';
 
 export class Projectile {
     constructor(scene, position, direction, color = 0xff00ff) {
         this.scene = scene;
         this.position = position.clone();
         this.direction = direction.clone().normalize();
-        this.speed = 0.3;
+        
+        // Get projectile speed and lifetime from configuration
+        this.speed = configLoader.get('game.physics.projectileSpeed', 0.3);
+        this.lifeTime = configLoader.get('game.physics.projectileLifetime', 5000);
+        
         this.mesh = null;
         this.active = true;
-        this.lifeTime = 5000; // Projectile exists for 5 seconds
         this.creationTime = Date.now();
         this.color = color;
         

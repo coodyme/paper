@@ -1,5 +1,6 @@
 import { getDebugger } from '../utils/debug.js';
 import * as THREE from 'three';
+import configLoader from '../utils/configLoader.js';
 
 export class ChatSystem {
     constructor(networkManager) {
@@ -9,7 +10,11 @@ export class ChatSystem {
         this.chatInstructions = null;
         this.currentMessage = '';
         this.messages = {}; // Store messages by player ID
-        this.messageDuration = 5000; // Messages display for 5 seconds
+        
+        // Get message duration from configuration
+        this.messageDuration = configLoader.get('ui.chatMessageDuration', 5000);
+        this.instructionsDuration = configLoader.get('ui.instructionsDuration', 3000);
+        
         this.debug = getDebugger();
         this.instructionsShown = false; // Track if instructions have been shown
         
@@ -116,7 +121,7 @@ export class ChatSystem {
             this.chatInstructions.style.opacity = '0.7';
         }
         
-        // Hide instructions after 3 seconds
+        // Hide instructions after configured duration
         setTimeout(() => {
             if (this.chatInstructions) {
                 this.chatInstructions.style.opacity = '0';
@@ -128,7 +133,7 @@ export class ChatSystem {
                     }
                 }, 500); // Match transition duration
             }
-        }, 3000);
+        }, this.instructionsDuration);
         
         this.instructionsShown = true;
     }
@@ -285,7 +290,7 @@ export class ChatSystem {
             timestamp: Date.now()
         };
         
-        // Set timeout to remove message
+        // Set timeout to remove message using configured duration
         setTimeout(() => {
             this.removeExistingMessage(playerId);
         }, this.messageDuration);

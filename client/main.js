@@ -4,6 +4,7 @@ import { Player } from './game/player.js';
 import { ThirdPersonCamera } from './game/camera.js';
 import { NetworkManager } from './game/network.js';
 import { initDebug } from './utils/debug.js';
+import configLoader from './utils/configLoader.js';
 
 // Add CSS for controls
 const style = document.createElement('style');
@@ -111,11 +112,12 @@ class Game {
         this.networkManager = null;
         this.updateInterval = null;
         this.debugSystem = null;
-        
-        this.init();
     }
 
-    init() {
+    async init() {
+        // Load configuration before initializing the game
+        await configLoader.loadConfig();
+        
         // Setup renderer
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -135,7 +137,7 @@ class Game {
         // Initialize world
         this.world = new World(this.scene);
         
-        // Initialize player
+        // Initialize player with config-based speeds
         this.player = new Player(this.scene);
         
         // Set player as camera target
@@ -148,12 +150,13 @@ class Game {
         this.networkManager = new NetworkManager(this.scene, this.camera);
         this.networkManager.connect(this.player);
         
-        // Set a reasonable network update rate (10 updates per second)
+        // Set network update rate from configuration
+        const updateRate = configLoader.get('network.updateRate', 100);
         this.updateInterval = setInterval(() => {
             if (this.networkManager) {
                 this.networkManager.update(this.clock.getDelta());
             }
-        }, 100);
+        }, updateRate);
         
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
@@ -184,6 +187,11 @@ class Game {
             this.thirdPersonCamera.update();
         }
         
+        // Update world and billboards
+        if (this.world) {
+            this.world.update(deltaTime);
+        }
+        
         // Update projectiles and other networked entities
         if (this.networkManager) {
             this.networkManager.update(deltaTime);
@@ -192,9 +200,35 @@ class Game {
         // Render scene
         this.renderer.render(this.scene, this.camera);
     }
+    
+    // Clean up resources when game is destroyed
+    cleanup() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+        
+        if (this.player) {
+            this.player.cleanup();
+        }
+        
+        if (this.world) {
+            this.world.cleanup();
+        }
+        
+        if (this.networkManager) {
+            // Cleanup network resources if we add a cleanup method
+        }
+        
+        // Remove event listeners
+        window.removeEventListener('resize', this.onWindowResize);
+    }
 }
 
 // Initialize the game when the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const game = new Game();
+    await game.init();
+    
+    // Store game reference for potential cleanup
+    window.gameInstance = game;
 });
