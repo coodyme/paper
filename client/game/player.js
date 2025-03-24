@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { InputManager } from '../utils/inputManager.js';
 
 export class Player {
     constructor(scene) {
@@ -13,7 +14,9 @@ export class Player {
         this.moveRight = false;
         
         this.createPlayer();
-        this.setupControls();
+        
+        // Initialize input manager instead of direct keyboard handling
+        this.inputManager = new InputManager(this);
     }
     
     createPlayer() {
@@ -97,48 +100,13 @@ export class Player {
         this.mesh.add(label);
     }
     
-    setupControls() {
-        // Setup keyboard event listeners
-        document.addEventListener('keydown', this.onKeyDown.bind(this), false);
-        document.addEventListener('keyup', this.onKeyUp.bind(this), false);
-    }
-    
-    onKeyDown(event) {
-        switch (event.code) {
-            case 'KeyW':
-                this.moveForward = true;
-                break;
-            case 'KeyS':
-                this.moveBackward = true;
-                break;
-            case 'KeyA':
-                this.moveLeft = true;
-                break;
-            case 'KeyD':
-                this.moveRight = true;
-                break;
-        }
-    }
-    
-    onKeyUp(event) {
-        switch (event.code) {
-            case 'KeyW':
-                this.moveForward = false;
-                break;
-            case 'KeyS':
-                this.moveBackward = false;
-                break;
-            case 'KeyA':
-                this.moveLeft = false;
-                break;
-            case 'KeyD':
-                this.moveRight = false;
-                break;
-        }
-    }
-    
     update(deltaTime) {
-        // Calculate movement based on key presses
+        // Update input manager
+        if (this.inputManager) {
+            this.inputManager.update();
+        }
+        
+        // Calculate movement based on input flags
         let speed = 0;
         
         if (this.moveForward) speed = this.speed;
@@ -163,6 +131,31 @@ export class Player {
             const camera = this.scene.getObjectByProperty('type', 'PerspectiveCamera');
             if (camera) {
                 this.label.lookAt(camera.position);
+            }
+        }
+    }
+    
+    // Clean up resources when player is destroyed
+    cleanup() {
+        if (this.inputManager) {
+            this.inputManager.cleanup();
+        }
+        
+        if (this.mesh) {
+            if (this.mesh.parent) {
+                this.mesh.parent.remove(this.mesh);
+            }
+            
+            // Dispose of geometries and materials
+            if (this.mesh.geometry) this.mesh.geometry.dispose();
+            if (Array.isArray(this.mesh.material)) {
+                this.mesh.material.forEach(material => {
+                    if (material.map) material.map.dispose();
+                    material.dispose();
+                });
+            } else if (this.mesh.material) {
+                if (this.mesh.material.map) this.mesh.material.map.dispose();
+                this.mesh.material.dispose();
             }
         }
     }

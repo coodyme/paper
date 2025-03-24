@@ -48,8 +48,40 @@ style.textContent = `
         border-color: #ff00ff;
         box-shadow: 0 0 15px rgba(255, 0, 255, 0.7);
     }
+    
+    /* Mobile device styles */
+    @media (max-width: 768px) {
+        #voice-controls {
+            bottom: 150px !important;
+        }
+        
+        #debug-controls {
+            top: 10px;
+            left: 10px;
+            max-width: 120px;
+            font-size: 12px;
+            padding: 5px;
+        }
+        
+        #chat-input {
+            bottom: 150px !important;
+            width: 80% !important;
+            font-size: 14px !important;
+        }
+    }
+    
+    /* Prevent pinch zoom on touch devices */
+    body {
+        touch-action: none;
+    }
 `;
 document.head.appendChild(style);
+
+// Add viewport meta tag to prevent zooming on mobile
+const metaViewport = document.createElement('meta');
+metaViewport.name = 'viewport';
+metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+document.head.appendChild(metaViewport);
 
 // Create global debug settings object for backward compatibility
 window.debugSettings = {

@@ -19,12 +19,18 @@ export class NetworkManager {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.debug = getDebugger();
+        this.isMobile = this.detectMobile();
         
         // Initialize remote player materials
         this.playerMaterials = {};
         
         // Setup click event listener for throwing cubes
         document.addEventListener('click', this.onMouseClick.bind(this));
+        
+        // Add touch event for mobile devices
+        if (this.isMobile) {
+            document.addEventListener('touchend', this.onTouchEnd.bind(this), false);
+        }
     }
     
     /**
@@ -141,6 +147,13 @@ export class NetworkManager {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         
+        this.processClick();
+    }
+
+    /**
+     * Add a shared method to process clicks and touches
+     */
+    processClick() {
         // Use the stored camera reference
         if (!this.camera) {
             console.error("Camera reference not found");
@@ -189,6 +202,46 @@ export class NetworkManager {
                 console.error("ProjectileManager not initialized");
             }
         }
+    }
+
+    /**
+     * Add touch handler method
+     */
+    onTouchEnd(event) {
+        // Only handle taps (short touches), not control touches
+        if (event.changedTouches.length === 0) return;
+        
+        // Get the first changed touch (end of touch)
+        const touch = event.changedTouches[0];
+        
+        // Avoid handling control area touches (left and right sides of screen)
+        const touchX = touch.clientX;
+        const screenWidth = window.innerWidth;
+        
+        // Only throw cube if touch is in the middle 60% of the screen
+        if (touchX > screenWidth * 0.2 && touchX < screenWidth * 0.8) {
+            // Convert touch to normalized device coordinates
+            this.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+            
+            // Process the touch as a click to throw cube
+            this.processClick();
+        }
+    }
+
+    /**
+     * Add mobile detection method
+     */
+    detectMobile() {
+        return (
+            navigator.userAgent.match(/Android/i) ||
+            navigator.userAgent.match(/webOS/i) ||
+            navigator.userAgent.match(/iPhone/i) ||
+            navigator.userAgent.match(/iPad/i) ||
+            navigator.userAgent.match(/iPod/i) ||
+            navigator.userAgent.match(/BlackBerry/i) ||
+            navigator.userAgent.match(/Windows Phone/i)
+        );
     }
     
     /**

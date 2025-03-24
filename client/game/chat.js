@@ -138,6 +138,21 @@ export class ChatSystem {
             this.createChatInput();
         }
         
+        // If on mobile, move the chat input higher up to avoid the virtual keyboard
+        const isMobile = (
+            navigator.userAgent.match(/Android/i) ||
+            navigator.userAgent.match(/webOS/i) ||
+            navigator.userAgent.match(/iPhone/i) ||
+            navigator.userAgent.match(/iPad/i) ||
+            navigator.userAgent.match(/iPod/i) ||
+            navigator.userAgent.match(/BlackBerry/i) ||
+            navigator.userAgent.match(/Windows Phone/i)
+        );
+        
+        if (isMobile) {
+            this.chatInput.style.bottom = '50%';
+        }
+        
         this.isInputActive = true;
         this.chatInput.style.display = 'block';
         this.chatInput.value = '';
@@ -149,6 +164,21 @@ export class ChatSystem {
         if (this.chatInput) {
             this.chatInput.style.display = 'none';
             this.chatInput.blur();
+            
+            // Reset position for mobile
+            const isMobile = (
+                navigator.userAgent.match(/Android/i) ||
+                navigator.userAgent.match(/webOS/i) ||
+                navigator.userAgent.match(/iPhone/i) ||
+                navigator.userAgent.match(/iPad/i) ||
+                navigator.userAgent.match(/iPod/i) ||
+                navigator.userAgent.match(/BlackBerry/i) ||
+                navigator.userAgent.match(/Windows Phone/i)
+            );
+            
+            if (isMobile) {
+                this.chatInput.style.bottom = '80px';
+            }
         }
         this.isInputActive = false;
     }
