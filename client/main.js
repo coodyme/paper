@@ -40,6 +40,14 @@ style.textContent = `
         cursor: pointer;
         user-select: none;
     }
+    #chat-input {
+        outline: none;
+        transition: all 0.3s ease;
+    }
+    #chat-input:focus {
+        border-color: #ff00ff;
+        box-shadow: 0 0 15px rgba(255, 0, 255, 0.7);
+    }
 `;
 document.head.appendChild(style);
 

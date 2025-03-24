@@ -95,6 +95,20 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('remoteCubeThrow', throwData);
     });
     
+    // Handle chat messages
+    socket.on('chatMessage', (data) => {
+        console.log(`Chat message from ${socket.id}: ${data.message}`);
+        
+        // Add sender ID to the data
+        const messageData = {
+            ...data,
+            senderId: socket.id
+        };
+        
+        // Broadcast the message to all other players
+        socket.broadcast.emit('chatMessage', messageData);
+    });
+    
     // Handle player disconnection
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);

@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import * as THREE from 'three';
 import { VoiceChat } from './voice.js';
 import { ProjectileManager } from './projectile.js';
+import { ChatSystem } from './chat.js'; // Import the chat system
 import { getDebugger } from '../utils/debug.js';
 
 export class NetworkManager {
@@ -14,6 +15,7 @@ export class NetworkManager {
         this.localPlayer = null;
         this.voiceChat = null;
         this.projectileManager = null;
+        this.chatSystem = null; // Add chat system reference
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.debug = getDebugger();
@@ -46,6 +48,9 @@ export class NetworkManager {
         
         // Initialize projectile manager
         this.projectileManager = new ProjectileManager(this.scene, this);
+        
+        // Initialize chat system
+        this.chatSystem = new ChatSystem(this);
     }
     
     setupEventListeners() {
@@ -58,6 +63,11 @@ export class NetworkManager {
                     this.addRemotePlayer(id, players[id]);
                 }
             });
+            
+            // Show chat instructions when player first connects
+            if (this.chatSystem) {
+                this.chatSystem.showInstructions();
+            }
         });
         
         // Handle new player joining
@@ -99,6 +109,14 @@ export class NetworkManager {
             this.debug?.logNetworkEvent('remoteCubeThrow', throwData);
             if (this.projectileManager) {
                 this.projectileManager.createRemoteProjectile(throwData);
+            }
+        });
+
+        // Add chat message handler
+        this.socket.on('chatMessage', (data) => {
+            this.debug?.logNetworkEvent('chatMessage', data);
+            if (this.chatSystem) {
+                this.chatSystem.receiveMessage(data.senderId, data.message);
             }
         });
     }
@@ -371,6 +389,11 @@ export class NetworkManager {
         // Update projectiles
         if (this.projectileManager) {
             this.projectileManager.update(deltaTime);
+        }
+        
+        // Update chat system
+        if (this.chatSystem) {
+            this.chatSystem.update();
         }
     }
 
