@@ -86,6 +86,9 @@ class Game {
         this.camera.position.set(0, 5, 10);
         this.camera.lookAt(0, 0, 0);
         
+        // Add camera to scene - Needed for billboard labels
+        this.scene.add(this.camera);
+        
         // Initialize camera controller
         this.thirdPersonCamera = new ThirdPersonCamera(this.camera);
         

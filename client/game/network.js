@@ -234,12 +234,69 @@ export class NetworkManager {
         playerLight.position.set(0, 0, 0);
         mesh.add(playerLight);
         
+        // Add player ID label above the player
+        this.addPlayerLabel(mesh, id);
+        
         // Store player mesh
         this.players[id] = mesh;
         this.playerMaterials[id] = materials;
         
         // Add to scene
         this.scene.add(mesh);
+    }
+    
+    /**
+     * Create and add a text label above the player
+     * @param {THREE.Mesh} playerMesh - The player's mesh
+     * @param {string} id - Player ID to display
+     */
+    addPlayerLabel(playerMesh, id) {
+        // Create a canvas for the text
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 64;
+        
+        // Fill with transparent background
+        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add border
+        context.strokeStyle = '#ffffff';
+        context.lineWidth = 2;
+        context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+        
+        // Add text - use a shortened version of the ID for display
+        const shortId = id.substring(0, 6);
+        context.font = 'bold 30px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = '#ffffff';
+        context.fillText(shortId, canvas.width / 2, canvas.height / 2);
+        
+        // Create texture and material
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        
+        // Create label mesh
+        const labelGeometry = new THREE.PlaneGeometry(1.2, 0.3);
+        const label = new THREE.Mesh(labelGeometry, material);
+        
+        // Position above player (with slight offset)
+        label.position.set(0, 1.2, 0);
+        
+        // Ensure label is always facing the camera
+        label.userData.isBillboard = true;
+        
+        // Add the label to the player mesh
+        playerMesh.add(label);
+        
+        // Store label reference
+        playerMesh.userData.label = label;
     }
     
     /**
@@ -271,6 +328,12 @@ export class NetworkManager {
         
         // Add floating animation for consistent visual style
         playerMesh.position.y = position.y + Math.sin(Date.now() * 0.002) * 0.1;
+        
+        // Update label billboard effect
+        if (playerMesh.userData.label && this.camera) {
+            // Make sure the label always faces the camera
+            playerMesh.userData.label.lookAt(this.camera.position);
+        }
     }
     
     /**
@@ -297,6 +360,13 @@ export class NetworkManager {
     update(deltaTime) {
         // Send local player updates
         this.sendPlayerUpdate();
+        
+        // Update billboard labels to face camera
+        Object.values(this.players).forEach(playerMesh => {
+            if (playerMesh.userData.label && this.camera) {
+                playerMesh.userData.label.lookAt(this.camera.position);
+            }
+        });
         
         // Update projectiles
         if (this.projectileManager) {
