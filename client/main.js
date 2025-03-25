@@ -5,6 +5,9 @@ import { ThirdPersonCamera } from './game/camera.js';
 import { NetworkManager } from './game/network.js';
 import { initDebug } from './utils/debug.js';
 import configLoader from './utils/configLoader.js';
+import { SceneManager } from './utils/SceneManager.js';
+import { LoginScene } from './scenes/LoginScene.js';
+import { GameScene } from './scenes/GameScene.js';
 
 // Add CSS for controls
 const style = document.createElement('style');
@@ -237,9 +240,32 @@ class Game {
 
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    const game = new Game();
-    await game.init();
+    // Create container for scenes
+    const container = document.createElement('div');
+    container.id = 'app-container';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.overflow = 'hidden';
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    document.body.appendChild(container);
     
-    // Store game reference for potential cleanup
-    window.gameInstance = game;
+    // Initialize scene manager
+    const sceneManager = new SceneManager(container);
+    
+    // Register scenes
+    sceneManager.registerScene('login', LoginScene);
+    sceneManager.registerScene('game', GameScene);
+    
+    // Start with login scene
+    await sceneManager.changeScene('login');
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        sceneManager.resize();
+    });
+    
+    // Store reference for debugging
+    window.sceneManager = sceneManager;
 });

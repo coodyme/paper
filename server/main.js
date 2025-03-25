@@ -101,6 +101,19 @@ io.on('connection', (socket) => {
     // Add new player
     const player = playerManager.addPlayer(socket.id);
     
+    // Handle username setting
+    socket.on('setUsername', (data) => {
+        if (data.username && typeof data.username === 'string') {
+            playerManager.setPlayerUsername(socket.id, data.username);
+            
+            // Broadcast username update
+            socket.broadcast.emit('playerUpdated', {
+                id: socket.id,
+                username: data.username
+            });
+        }
+    });
+    
     // Send current players to new player
     socket.emit('players', playerManager.getPlayersData());
     

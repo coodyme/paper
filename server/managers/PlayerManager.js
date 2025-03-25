@@ -57,6 +57,20 @@ export class PlayerManager {
     }
     
     /**
+     * Set a player's username
+     * @param {string} id - Player socket ID
+     * @param {string} username - Player username
+     * @returns {boolean} - Success status
+     */
+    setPlayerUsername(id, username) {
+        if (this.players[id]) {
+            this.players[id].username = username;
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Remove a player
      * @param {string} id - Player socket ID
      */

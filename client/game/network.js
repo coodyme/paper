@@ -6,9 +6,10 @@ import { ChatSystem } from './chat.js'; // Import the chat system
 import { getDebugger } from '../utils/debug.js';
 
 export class NetworkManager {
-    constructor(scene, camera) {
+    constructor(scene, camera, username = null) {
         this.scene = scene;
         this.camera = camera;
+        this.username = username;
         this.socket = null;
         this.players = {};
         this.playerData = {}; // Store player data including peerId
@@ -62,6 +63,11 @@ export class NetworkManager {
         
         // Initialize chat system
         this.chatSystem = new ChatSystem(this);
+        
+        // If we have a username, send it to the server
+        if (this.username) {
+            this.socket.emit('setUsername', { username: this.username });
+        }
     }
     
     setupEventListeners() {
@@ -587,5 +593,38 @@ export class NetworkManager {
             geometry.dispose();
             material.dispose();
         }, 1000);
+    }
+
+    // Add cleanup method
+    cleanup() {
+        // Remove event listeners
+        document.removeEventListener('click', this.onMouseClick.bind(this));
+        document.removeEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
+        
+        if (this.isMobile) {
+            document.removeEventListener('touchend', this.onTouchEnd.bind(this));
+        }
+        
+        // Disconnect socket
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+        
+        // Clean up voice chat
+        if (this.voiceChat) {
+            this.voiceChat.cleanup();
+        }
+        
+        // Clean up chat system
+        if (this.chatSystem) {
+            this.chatSystem.cleanup();
+        }
+        
+        // Clean up projectiles
+        if (this.projectileManager) {
+            this.projectileManager.cleanup();
+        }
     }
 }
