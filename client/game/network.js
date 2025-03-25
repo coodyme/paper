@@ -4,15 +4,17 @@ import { VoiceChat } from './voice.js';
 import { ProjectileManager } from './projectile.js';
 import { ChatSystem } from './chat.js'; // Import the chat system
 import { getDebugger } from '../utils/debug.js';
+import roleManager from '../utils/RoleManager.js';
 
 export class NetworkManager {
-    constructor(scene, camera, username = null) {
+    constructor(scene, camera, username = null, role = null) {
         this.scene = scene;
         this.camera = camera;
         this.username = username;
+        this.role = role || roleManager.getRole();
         this.socket = null;
         this.players = {};
-        this.playerData = {}; // Store player data including username and peerId
+        this.playerData = {}; // Store player data including username, role and peerId
         this.localPlayer = null;
         this.voiceChat = null;
         this.projectileManager = null;
@@ -46,9 +48,10 @@ export class NetworkManager {
     connect(localPlayer) {
         this.localPlayer = localPlayer;
         
-        // Set local player's username
+        // Set local player's username and role
         if (this.username) {
             this.localPlayer.username = this.username;
+            this.localPlayer.role = this.role;
             this.updateLocalPlayerLabel();
         }
         
@@ -70,16 +73,19 @@ export class NetworkManager {
         // Initialize chat system
         this.chatSystem = new ChatSystem(this);
         
-        // If we have a username, send it to the server
+        // Send both username and role to the server
         if (this.username) {
-            this.socket.emit('setUsername', { username: this.username });
+            this.socket.emit('setUserInfo', { 
+                username: this.username,
+                role: this.role
+            });
         }
     }
     
     // Update the local player's label with username
     updateLocalPlayerLabel() {
         if (this.localPlayer && this.localPlayer.label) {
-            this.localPlayer.updatePlayerLabel(this.username);
+            this.localPlayer.updatePlayerLabel(this.username, this.role);
         }
     }
     
@@ -473,9 +479,12 @@ export class NetworkManager {
         context.fillStyle = 'rgba(0, 0, 0, 0.5)';
         context.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Add border
-        context.strokeStyle = '#ffffff';
-        context.lineWidth = 2;
+        // Determine if this player is an admin
+        const isAdmin = this.isUserAdmin(id);
+        
+        // Add border (different color for admins)
+        context.strokeStyle = isAdmin ? '#ff0000' : '#ffffff';
+        context.lineWidth = isAdmin ? 3 : 2;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         
         // Determine display text (prioritize username)
@@ -491,10 +500,15 @@ export class NetworkManager {
             displayText = id.substring(0, 6);
         }
         
+        // Add [ADMIN] prefix for admin users
+        if (isAdmin) {
+            displayText = `[ADMIN] ${displayText}`;
+        }
+        
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillStyle = '#ffffff';
+        context.fillStyle = isAdmin ? '#ff9999' : '#ffffff';
         context.fillText(displayText, canvas.width / 2, canvas.height / 2);
         
         // Create texture and material
@@ -687,5 +701,14 @@ export class NetworkManager {
         if (this.projectileManager) {
             this.projectileManager.cleanup();
         }
+    }
+
+    // Add admin-specific methods
+    isUserAdmin(userId) {
+        // Check if a user is an admin (local user or remote)
+        if (userId === this.socket?.id) {
+            return this.role === 'admin';
+        }
+        return this.playerData[userId]?.role === 'admin';
     }
 }

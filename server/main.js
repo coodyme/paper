@@ -101,15 +101,42 @@ io.on('connection', (socket) => {
     // Add new player
     const player = playerManager.addPlayer(socket.id);
     
-    // Handle username setting
-    socket.on('setUsername', (data) => {
+    // Handle username and role setting
+    socket.on('setUserInfo', (data) => {
         if (data.username && typeof data.username === 'string') {
-            playerManager.setPlayerUsername(socket.id, data.username);
+            // Determine if user is admin based on username
+            const isAdmin = data.username.toLowerCase() === 'admin';
+            const role = isAdmin ? 'admin' : 'player';
             
-            // Broadcast username update
+            // Set username and role
+            playerManager.setUserInfo(socket.id, data.username, role);
+            
+            // Broadcast user info update
             socket.broadcast.emit('playerUpdated', {
                 id: socket.id,
-                username: data.username
+                username: data.username,
+                role: role
+            });
+            
+            console.log(`Player ${socket.id} set username to ${data.username} with role ${role}`);
+        }
+    });
+    
+    // For backward compatibility
+    socket.on('setUsername', (data) => {
+        if (data.username && typeof data.username === 'string') {
+            // Determine if user is admin based on username
+            const isAdmin = data.username.toLowerCase() === 'admin';
+            const role = isAdmin ? 'admin' : 'player';
+            
+            // Set username and role
+            playerManager.setUserInfo(socket.id, data.username, role);
+            
+            // Broadcast user info update
+            socket.broadcast.emit('playerUpdated', {
+                id: socket.id,
+                username: data.username,
+                role: role
             });
         }
     });

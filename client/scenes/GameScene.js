@@ -6,11 +6,19 @@ import { NetworkManager } from '../game/network.js';
 import { initDebug } from '../utils/debug.js';
 import configLoader from '../utils/configLoader.js';
 import { Scene } from '../utils/SceneManager.js';
+import roleManager from '../utils/RoleManager.js';
 
 export class GameScene extends Scene {
     constructor(sceneManager, params = {}) {
         super(sceneManager);
         this.username = params.username || 'Player';
+        this.role = params.role || 'player';
+        
+        // Update role manager with current role
+        if (params.role) {
+            roleManager.currentRole = params.role;
+        }
+        
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(
             75, 
@@ -60,11 +68,16 @@ export class GameScene extends Scene {
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
         
-        // Initialize debug system
-        this.debugSystem = initDebug(this.scene);
+        // Initialize debug system with role awareness
+        this.debugSystem = initDebug(this.scene, roleManager.isAdmin());
         
-        // Initialize network manager with username
-        this.networkManager = new NetworkManager(this.scene, this.camera, this.username);
+        // Initialize network manager with username and role
+        this.networkManager = new NetworkManager(
+            this.scene, 
+            this.camera, 
+            this.username,
+            this.role
+        );
         
         // Give network manager reference to world for jukebox interactions
         this.networkManager.world = this.world;

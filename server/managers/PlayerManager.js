@@ -12,33 +12,17 @@ export class PlayerManager {
      * @returns {Object} - Player data
      */
     addPlayer(id) {
-        // Generate random spawn position within configured radius
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * this.spawnRadius;
-        
-        const position = {
-            x: Math.cos(angle) * distance,
-            y: 0.5,
-            z: Math.sin(angle) * distance
-        };
-        
-        const rotation = {
-            y: Math.random() * Math.PI * 2
-        };
-        
-        // Create player data
         const player = {
             id,
-            position,
-            rotation,
+            position: this.getRandomSpawnPosition(),
+            rotation: { y: 0 },
             color: this.getRandomColor(),
-            joinTime: Date.now(),
-            peerId: null // Add field for PeerJS ID
+            peerId: null,
+            username: null,
+            role: 'player' // Default role
         };
         
-        // Store player
         this.players[id] = player;
-        
         return player;
     }
     
@@ -57,14 +41,16 @@ export class PlayerManager {
     }
     
     /**
-     * Set a player's username
+     * Set a player's username and role
      * @param {string} id - Player socket ID
      * @param {string} username - Player username
+     * @param {string} role - Player role (admin or player)
      * @returns {boolean} - Success status
      */
-    setPlayerUsername(id, username) {
+    setUserInfo(id, username, role = 'player') {
         if (this.players[id]) {
             this.players[id].username = username;
+            this.players[id].role = role;
             return true;
         }
         return false;
@@ -107,7 +93,8 @@ export class PlayerManager {
                 rotation: this.players[id].rotation,
                 color: this.players[id].color,
                 peerId: this.players[id].peerId,
-                username: this.players[id].username, // Include username in data
+                username: this.players[id].username,
+                role: this.players[id].role, // Include role in data
                 isBot: !!this.players[id].isBot,
                 name: this.players[id].name // For bots
             };
@@ -131,5 +118,16 @@ export class PlayerManager {
         ];
         
         return neonColors[Math.floor(Math.random() * neonColors.length)];
+    }
+
+    getRandomSpawnPosition() {
+        // Define spawn area boundaries
+        const spawnAreaSize = 10;
+        
+        return {
+            x: (Math.random() * spawnAreaSize * 2) - spawnAreaSize,
+            y: 0, // Assuming y is height/vertical position
+            z: (Math.random() * spawnAreaSize * 2) - spawnAreaSize
+        };
     }
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { InputManager } from '../utils/inputManager.js';
 import configLoader from '../utils/configLoader.js';
+import roleManager from '../utils/RoleManager.js';
 
 export class Player {
     constructor(scene) {
@@ -8,6 +9,7 @@ export class Player {
         this.mesh = null;
         this.label = null;
         this.username = 'Player'; // Default username
+        this.role = roleManager.getRole(); // Default role
         this.inputManager = null;
         this.speed = configLoader.get('player.moveSpeed', 0.1);
         this.rotationSpeed = configLoader.get('player.rotationSpeed', 0.06);
@@ -124,22 +126,109 @@ export class Player {
         context.fillStyle = 'rgba(0, 0, 0, 0.5)';
         context.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Add glowing border
-        const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
-        gradient.addColorStop(0, '#00ffff');
-        gradient.addColorStop(0.5, '#ff00ff');
-        gradient.addColorStop(1, '#00ffff');
+        // Add glowing border (red for admin, cyan/magenta for regular players)
+        const isAdmin = this.role === 'admin';
         
-        context.strokeStyle = gradient;
+        if (isAdmin) {
+            // Red gradient for admin
+            const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#ff0000');
+            gradient.addColorStop(0.5, '#ff5555');
+            gradient.addColorStop(1, '#ff0000');
+            context.strokeStyle = gradient;
+        } else {
+            // Cyan/magenta gradient for regular players
+            const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#00ffff');
+            gradient.addColorStop(0.5, '#ff00ff');
+            gradient.addColorStop(1, '#00ffff');
+            context.strokeStyle = gradient;
+        }
+        
         context.lineWidth = 3;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         
-        // Add text - show username followed by "YOU" in parentheses
-        const displayText = `${this.username} (YOU)`;
+        // Add text - show username followed by role indicator
+        let displayText = this.username;
+        
+        // Add role prefix for admin
+        if (isAdmin) {
+            displayText = `[ADMIN] ${displayText}`;
+        }
+        
+        // Always add (YOU) suffix to identify the local player
+        displayText = `${displayText} (YOU)`;
+        
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillStyle = '#ffffff';
+        context.fillStyle = isAdmin ? '#ff9999' : '#ffffff';
+        context.fillText(displayText, canvas.width / 2, canvas.height / 2);
+        
+        // Update the texture
+        const texture = new THREE.CanvasTexture(canvas);
+        this.label.material.map = texture;
+        this.label.material.needsUpdate = true;
+    }
+    
+    /**
+     * Update the player label with a new username and role
+     * @param {string} username - The username to display
+     * @param {string} role - The player's role (admin or player)
+     */
+    updatePlayerLabel(username, role = 'player') {
+        if (!this.mesh || !this.label) return;
+        
+        this.username = username;
+        this.role = role;
+        
+        // Create a canvas for the text
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 64;
+        
+        // Fill with transparent background
+        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add glowing border (red for admin, cyan/magenta for regular players)
+        const isAdmin = this.role === 'admin';
+        
+        if (isAdmin) {
+            // Red gradient for admin
+            const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#ff0000');
+            gradient.addColorStop(0.5, '#ff5555');
+            gradient.addColorStop(1, '#ff0000');
+            context.strokeStyle = gradient;
+        } else {
+            // Cyan/magenta gradient for regular players
+            const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#00ffff');
+            gradient.addColorStop(0.5, '#ff00ff');
+            gradient.addColorStop(1, '#00ffff');
+            context.strokeStyle = gradient;
+        }
+        
+        context.lineWidth = 3;
+        context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+        
+        // Add text - show username followed by role indicator
+        let displayText = this.username;
+        
+        // Add role prefix for admin
+        if (isAdmin) {
+            displayText = `[ADMIN] ${displayText}`;
+        }
+        
+        // Always add (YOU) suffix to identify the local player
+        displayText = `${displayText} (YOU)`;
+        
+        context.font = 'bold 30px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = isAdmin ? '#ff9999' : '#ffffff';
         context.fillText(displayText, canvas.width / 2, canvas.height / 2);
         
         // Update the texture

@@ -1,115 +1,79 @@
 import * as THREE from 'three';
+import roleManager from './RoleManager.js';
 
 export class Debug {
-    constructor(scene) {
+    constructor(scene, isAdmin = false) {
         this.scene = scene;
+        this.isAdmin = isAdmin;
         this.enabled = {
             projectiles: false,
             physics: false,
             network: false
         };
         
-        // Create debug UI elements
-        this.createDebugControls();
+        // Only create debug controls for admins
+        if (this.isAdmin) {
+            this.createDebugControls();
+        }
     }
     
     createDebugControls() {
-        // Create debug controls container if it doesn't exist
-        let debugControls = document.getElementById('debug-controls');
-        if (!debugControls) {
-            // Create the container
-            debugControls = document.createElement('div');
-            debugControls.id = 'debug-controls';
-            debugControls.style.position = 'fixed';
-            debugControls.style.top = '20px';
-            debugControls.style.left = '20px';
-            debugControls.style.color = 'white';
-            debugControls.style.fontFamily = 'monospace';
-            debugControls.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            debugControls.style.padding = '10px';
-            debugControls.style.borderRadius = '5px';
-            debugControls.style.fontSize = '14px';
-            debugControls.style.zIndex = '1000';
-            document.body.appendChild(debugControls);
-            
-            // Add debug options
-            this.addDebugOptions(debugControls);
+        // Check if debug controls already exist
+        if (document.getElementById('debug-controls')) {
+            return;
         }
-    }
-    
-    addDebugOptions(container) {
-        const debugOptions = [
-            { id: 'projectiles', label: 'Debug Projectiles' },
-            { id: 'physics', label: 'Debug Physics' },
-            { id: 'network', label: 'Debug Network' }
-        ];
         
-        // Create checkbox for each debug option
-        debugOptions.forEach(option => {
-            const optionContainer = document.createElement('div');
-            optionContainer.style.marginBottom = '5px';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `debug-${option.id}`;
-            checkbox.className = 'debug-checkbox';
-            checkbox.style.marginRight = '5px';
-            checkbox.style.verticalAlign = 'middle';
-            checkbox.checked = this.enabled[option.id];
-            
-            const label = document.createElement('label');
-            label.htmlFor = `debug-${option.id}`;
-            label.className = 'debug-label';
-            label.textContent = option.label;
-            label.style.cursor = 'pointer';
-            label.style.userSelect = 'none';
-            
-            optionContainer.appendChild(checkbox);
-            optionContainer.appendChild(label);
-            container.appendChild(optionContainer);
-            
-            // Add event listener to checkbox
-            checkbox.addEventListener('change', () => {
-                this.toggleDebug(option.id, checkbox.checked);
-            });
+        const debugControls = document.createElement('div');
+        debugControls.id = 'debug-controls';
+        debugControls.style.color = 'white';
+        debugControls.style.fontFamily = 'monospace';
+        debugControls.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        debugControls.style.padding = '10px';
+        debugControls.style.borderRadius = '5px';
+        debugControls.style.zIndex = '100';
+        
+        // Create debug toggle for projectiles
+        const projectilesToggle = document.createElement('div');
+        projectilesToggle.innerHTML = '<input type="checkbox" id="debug-projectiles"> <label for="debug-projectiles">Show Projectile Debug</label>';
+        projectilesToggle.querySelector('input').addEventListener('change', (e) => {
+            this.enabled.projectiles = e.target.checked;
+            window.debugSettings.projectiles = e.target.checked;
         });
         
-        // Add a debug info panel for displaying real-time debug information
-        const debugInfo = document.createElement('div');
-        debugInfo.id = 'debug-info';
-        debugInfo.style.marginTop = '10px';
-        debugInfo.style.padding = '5px';
-        debugInfo.style.borderTop = '1px solid rgba(255, 255, 255, 0.3)';
-        debugInfo.style.fontFamily = 'monospace';
-        debugInfo.style.fontSize = '12px';
-        debugInfo.style.whiteSpace = 'pre-wrap';
-        debugInfo.style.maxHeight = '200px';
-        debugInfo.style.overflowY = 'auto';
-        debugInfo.style.display = 'none'; // Initially hidden
-        container.appendChild(debugInfo);
-    }
-    
-    toggleDebug(key, value) {
-        this.enabled[key] = value;
+        // Create debug toggle for physics
+        const physicsToggle = document.createElement('div');
+        physicsToggle.innerHTML = '<input type="checkbox" id="debug-physics"> <label for="debug-physics">Show Physics Debug</label>';
+        physicsToggle.querySelector('input').addEventListener('change', (e) => {
+            this.enabled.physics = e.target.checked;
+            window.debugSettings.physics = e.target.checked;
+        });
         
-        // Update global debug settings for backward compatibility
-        if (!window.debugSettings) {
-            window.debugSettings = {};
-        }
-        window.debugSettings[key] = value;
+        // Create debug toggle for network
+        const networkToggle = document.createElement('div');
+        networkToggle.innerHTML = '<input type="checkbox" id="debug-network"> <label for="debug-network">Show Network Debug</label>';
+        networkToggle.querySelector('input').addEventListener('change', (e) => {
+            this.enabled.network = e.target.checked;
+            window.debugSettings.network = e.target.checked;
+        });
         
-        console.log(`Debug ${key}: ${value ? 'enabled' : 'disabled'}`);
+        // Admin notice
+        const adminNotice = document.createElement('div');
+        adminNotice.style.marginTop = '10px';
+        adminNotice.style.color = '#ff9999';
+        adminNotice.textContent = 'ADMIN MODE ACTIVE';
         
-        // Show/hide debug info panel based on any debug option being enabled
-        const anyEnabled = Object.values(this.enabled).some(val => val);
-        const debugInfo = document.getElementById('debug-info');
-        if (debugInfo) {
-            debugInfo.style.display = anyEnabled ? 'block' : 'none';
-        }
+        // Add toggles to debug controls
+        debugControls.appendChild(projectilesToggle);
+        debugControls.appendChild(physicsToggle);
+        debugControls.appendChild(networkToggle);
+        debugControls.appendChild(adminNotice);
+        
+        // Add debug controls to document body
+        document.body.appendChild(debugControls);
     }
     
     log(category, message, data = null) {
-        if (!this.enabled[category]) return;
+        if (!this.enabled[category] || !this.isAdmin) return;
         
         const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
         const prefix = `[${timestamp}] [${category.toUpperCase()}]`;
@@ -278,21 +242,73 @@ export class Debug {
         
         return this.visualizeRaycast(position, direction, length);
     }
+    
+    drawDebugLine(start, end, color = 0xff0000, duration = 1) {
+        if (!this.isAdmin) return;
+        
+        const material = new THREE.LineBasicMaterial({ color });
+        const points = [];
+        points.push(new THREE.Vector3(start.x, start.y, start.z));
+        points.push(new THREE.Vector3(end.x, end.y, end.z));
+        
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material);
+        this.scene.add(line);
+        
+        // Remove line after duration
+        setTimeout(() => {
+            this.scene.remove(line);
+            geometry.dispose();
+            material.dispose();
+        }, duration * 1000);
+    }
+    
+    drawDebugBox(position, size = 1, color = 0xff0000, duration = 1) {
+        if (!this.isAdmin) return;
+        
+        const geometry = new THREE.BoxGeometry(size, size, size);
+        const material = new THREE.MeshBasicMaterial({ 
+            color, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.7 
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(position);
+        this.scene.add(mesh);
+        
+        // Remove box after duration
+        setTimeout(() => {
+            this.scene.remove(mesh);
+            geometry.dispose();
+            material.dispose();
+        }, duration * 1000);
+    }
 }
 
 // Create singleton instance
 let debugInstance = null;
 
-export function initDebug(scene) {
+export function initDebug(scene, isAdmin = false) {
+    // If admin status is not provided explicitly, check roleManager
+    if (isAdmin === undefined) {
+        isAdmin = roleManager.isAdmin();
+    }
+    
     if (!debugInstance) {
-        debugInstance = new Debug(scene);
+        debugInstance = new Debug(scene, isAdmin);
+    } else {
+        // Update admin status if debug was already initialized
+        debugInstance.isAdmin = isAdmin;
+        
+        // Create debug controls if user is admin and they don't exist yet
+        if (isAdmin && !document.getElementById('debug-controls')) {
+            debugInstance.createDebugControls();
+        }
     }
     return debugInstance;
 }
 
 export function getDebugger() {
-    if (!debugInstance) {
-        console.warn('Debug system not initialized. Call initDebug(scene) first.');
-    }
     return debugInstance;
 }

@@ -1,4 +1,5 @@
 import { Scene } from '../utils/SceneManager.js';
+import roleManager from '../utils/RoleManager.js';
 
 export class LoginScene extends Scene {
     constructor(sceneManager, params = {}) {
@@ -102,8 +103,14 @@ export class LoginScene extends Scene {
             return;
         }
         
-        // Transition to game scene and pass username
-        this.sceneManager.changeScene('game', { username: this.username });
+        // Set role based on username
+        const role = roleManager.setRoleFromUsername(this.username);
+        
+        // Transition to game scene and pass username and role
+        this.sceneManager.changeScene('game', { 
+            username: this.username,
+            role: role
+        });
     }
     
     cleanup() {
