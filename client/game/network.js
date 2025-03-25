@@ -12,7 +12,7 @@ export class NetworkManager {
         this.username = username;
         this.socket = null;
         this.players = {};
-        this.playerData = {}; // Store player data including peerId
+        this.playerData = {}; // Store player data including username and peerId
         this.localPlayer = null;
         this.voiceChat = null;
         this.projectileManager = null;
@@ -46,6 +46,12 @@ export class NetworkManager {
     connect(localPlayer) {
         this.localPlayer = localPlayer;
         
+        // Set local player's username
+        if (this.username) {
+            this.localPlayer.username = this.username;
+            this.updateLocalPlayerLabel();
+        }
+        
         // Connect to server on same host but different port
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const serverUrl = `${protocol}//paper-server.coody.me`;
@@ -67,6 +73,13 @@ export class NetworkManager {
         // If we have a username, send it to the server
         if (this.username) {
             this.socket.emit('setUsername', { username: this.username });
+        }
+    }
+    
+    // Update the local player's label with username
+    updateLocalPlayerLabel() {
+        if (this.localPlayer && this.localPlayer.label) {
+            this.localPlayer.updatePlayerLabel(this.username);
         }
     }
     
@@ -148,6 +161,23 @@ export class NetworkManager {
             this.debug?.logNetworkEvent('chatMessage', data);
             if (this.chatSystem) {
                 this.chatSystem.receiveMessage(data.senderId, data.message, data.isBot);
+            }
+        });
+
+        // Handle player updates (including username)
+        this.socket.on('playerUpdated', (data) => {
+            this.debug?.logNetworkEvent('playerUpdated', data);
+            
+            // Update player data
+            if (this.playerData[data.id]) {
+                if (data.username) {
+                    this.playerData[data.id].username = data.username;
+                }
+                
+                // Update player label if the username changed
+                if (data.username && this.players[data.id]) {
+                    this.updatePlayerLabel(this.players[data.id], data.id, data.username);
+                }
             }
         });
     }
@@ -371,8 +401,16 @@ export class NetworkManager {
         playerLight.position.set(0, 0, 0);
         mesh.add(playerLight);
         
-        // Add player ID label above the player
-        this.addPlayerLabel(mesh, id, data.isBot ? data.name : undefined);
+        // Store the username in playerData if available
+        if (data.username) {
+            if (!this.playerData[id]) {
+                this.playerData[id] = {};
+            }
+            this.playerData[id].username = data.username;
+        }
+        
+        // Add player ID label above the player (will show username if available)
+        this.addPlayerLabel(mesh, id, data.isBot ? data.name : data.username);
         
         // Store player mesh
         this.players[id] = mesh;
@@ -440,8 +478,19 @@ export class NetworkManager {
         context.lineWidth = 2;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         
-        // Add text - use custom name or a shortened version of the ID
-        const displayText = customName || id.substring(0, 6);
+        // Determine display text (prioritize username)
+        let displayText = customName;
+        
+        // If no custom name provided, check for username in playerData
+        if (!displayText && this.playerData[id] && this.playerData[id].username) {
+            displayText = this.playerData[id].username;
+        }
+        
+        // Fallback to ID if no username is available
+        if (!displayText) {
+            displayText = id.substring(0, 6);
+        }
+        
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -471,6 +520,18 @@ export class NetworkManager {
         
         // Store label reference
         playerMesh.userData.label = label;
+    }
+    
+    // Update a player's label with their username
+    updatePlayerLabel(playerMesh, id, username) {
+        if (playerMesh && playerMesh.userData.label) {
+            // Remove the old label
+            const oldLabel = playerMesh.userData.label;
+            playerMesh.remove(oldLabel);
+            
+            // Create a new label with the username
+            this.addPlayerLabel(playerMesh, id, username);
+        }
     }
     
     /**

@@ -98,7 +98,22 @@ export class PlayerManager {
      * @returns {Object} - All players data
      */
     getPlayersData() {
-        return this.players;
+        const playersData = {};
+        
+        for (const id in this.players) {
+            playersData[id] = {
+                id,
+                position: this.players[id].position,
+                rotation: this.players[id].rotation,
+                color: this.players[id].color,
+                peerId: this.players[id].peerId,
+                username: this.players[id].username, // Include username in data
+                isBot: !!this.players[id].isBot,
+                name: this.players[id].name // For bots
+            };
+        }
+        
+        return playersData;
     }
     
     /**
