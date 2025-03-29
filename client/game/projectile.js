@@ -141,6 +141,7 @@ export class ProjectileManager {
         
         // Create projectile
         const projectile = new Projectile(this.scene, startPos, direction);
+        projectile.sourceId = 'local'; // Mark as thrown by local player
         this.projectiles.push(projectile);
         
         // Send throw event to server
@@ -222,8 +223,11 @@ export class ProjectileManager {
     
     // Check projectile collisions with all players
     checkProjectileCollisions(projectile) {
-        // Check if hit local player
-        if (this.networkManager.localPlayer) {
+        // Skip collision check if no sourceId (shouldn't happen, but safety check)
+        if (!projectile.sourceId) return;
+        
+        // Check if hit local player (only if projectile was thrown by remote player)
+        if (projectile.sourceId !== 'local' && this.networkManager.localPlayer) {
             if (projectile.checkCollision('local', this.networkManager.localPlayer.mesh)) {
                 // Visual effect for being hit - on the LOCAL player's mesh
                 this.showHitEffect(this.networkManager.localPlayer.mesh);
@@ -238,8 +242,11 @@ export class ProjectileManager {
             }
         }
         
-        // Check collisions with remote players
+        // Check collisions with remote players (skip the player who threw the projectile)
         Object.keys(this.networkManager.players || {}).forEach(playerId => {
+            // Skip checking collision with the player who threw this projectile
+            if (playerId === projectile.sourceId) return;
+            
             const playerMesh = this.networkManager.players[playerId];
             if (projectile.checkCollision(playerId, playerMesh)) {
                 // Visual effect for being hit - on the TARGET player's mesh
