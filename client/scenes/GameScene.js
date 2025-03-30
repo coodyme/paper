@@ -7,6 +7,7 @@ import { initDebug } from '../utils/debug.js';
 import configLoader from '../utils/configLoader.js';
 import { Scene } from '../utils/SceneManager.js';
 import roleManager from '../utils/RoleManager.js';
+import uiManager from '../utils/UIManager.js';
 
 export class GameScene extends Scene {
     constructor(sceneManager, params = {}) {
@@ -71,8 +72,12 @@ export class GameScene extends Scene {
         // Set player as camera target
         this.thirdPersonCamera.setTarget(this.player.mesh);
         
-        // Initialize debug system with role awareness
-        this.debugSystem = initDebug(this.scene, roleManager.isAdmin());
+        // Initialize debug system with role awareness first
+        const isAdmin = roleManager.isAdmin();
+        this.debugSystem = initDebug(this.scene, isAdmin);
+        
+        // Then initialize UI Manager with the debug instance
+        uiManager.init(this.debugSystem);
         
         // Initialize network manager with username and role
         this.networkManager = new NetworkManager(
@@ -222,6 +227,9 @@ export class GameScene extends Scene {
         if (this.networkManager && this.networkManager.cleanup) {
             this.networkManager.cleanup();
         }
+        
+        // Clean up UI elements
+        uiManager.cleanup();
         
         // Remove logout button
         if (this.logoutButton && this.logoutButton.parentNode) {

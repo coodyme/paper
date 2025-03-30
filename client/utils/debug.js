@@ -1,92 +1,22 @@
 import * as THREE from 'three';
 
 export class Debug {
-    constructor(scene) {
+    constructor(scene, isAdmin = false) {
         this.scene = scene;
+        this.isAdmin = isAdmin;
         this.enabled = {
             projectiles: false,
             physics: false,
             network: false
         };
         
-        // Create debug UI elements
-        this.createDebugControls();
+        // We no longer create debug UI elements here as UIManager will handle that
     }
     
+    // This method is no longer needed as UIManager will handle it
     createDebugControls() {
-        // Create debug controls container if it doesn't exist
-        let debugControls = document.getElementById('debug-controls');
-        if (!debugControls) {
-            // Create the container
-            debugControls = document.createElement('div');
-            debugControls.id = 'debug-controls';
-            debugControls.style.position = 'fixed';
-            debugControls.style.top = '20px';
-            debugControls.style.left = '20px';
-            debugControls.style.color = 'white';
-            debugControls.style.fontFamily = 'monospace';
-            debugControls.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            debugControls.style.padding = '10px';
-            debugControls.style.borderRadius = '5px';
-            debugControls.style.fontSize = '14px';
-            debugControls.style.zIndex = '1000';
-            document.body.appendChild(debugControls);
-            
-            // Add debug options
-            this.addDebugOptions(debugControls);
-        }
-    }
-    
-    addDebugOptions(container) {
-        const debugOptions = [
-            { id: 'projectiles', label: 'Debug Projectiles' },
-            { id: 'physics', label: 'Debug Physics' },
-            { id: 'network', label: 'Debug Network' }
-        ];
-        
-        // Create checkbox for each debug option
-        debugOptions.forEach(option => {
-            const optionContainer = document.createElement('div');
-            optionContainer.style.marginBottom = '5px';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `debug-${option.id}`;
-            checkbox.className = 'debug-checkbox';
-            checkbox.style.marginRight = '5px';
-            checkbox.style.verticalAlign = 'middle';
-            checkbox.checked = this.enabled[option.id];
-            
-            const label = document.createElement('label');
-            label.htmlFor = `debug-${option.id}`;
-            label.className = 'debug-label';
-            label.textContent = option.label;
-            label.style.cursor = 'pointer';
-            label.style.userSelect = 'none';
-            
-            optionContainer.appendChild(checkbox);
-            optionContainer.appendChild(label);
-            container.appendChild(optionContainer);
-            
-            // Add event listener to checkbox
-            checkbox.addEventListener('change', () => {
-                this.toggleDebug(option.id, checkbox.checked);
-            });
-        });
-        
-        // Add a debug info panel for displaying real-time debug information
-        const debugInfo = document.createElement('div');
-        debugInfo.id = 'debug-info';
-        debugInfo.style.marginTop = '10px';
-        debugInfo.style.padding = '5px';
-        debugInfo.style.borderTop = '1px solid rgba(255, 255, 255, 0.3)';
-        debugInfo.style.fontFamily = 'monospace';
-        debugInfo.style.fontSize = '12px';
-        debugInfo.style.whiteSpace = 'pre-wrap';
-        debugInfo.style.maxHeight = '200px';
-        debugInfo.style.overflowY = 'auto';
-        debugInfo.style.display = 'none'; // Initially hidden
-        container.appendChild(debugInfo);
+        // Method left for compatibility but does nothing
+        // UIManager will handle creation of debug controls
     }
     
     toggleDebug(key, value) {
@@ -120,6 +50,9 @@ export class Debug {
         } else {
             console.log(`${prefix} ${message}`);
         }
+        
+        // Only show in UI for admin users
+        if (!this.isAdmin) return;
         
         // Append to debug info panel
         const debugInfo = document.getElementById('debug-info');
@@ -283,9 +216,13 @@ export class Debug {
 // Create singleton instance
 let debugInstance = null;
 
-export function initDebug(scene) {
+export function initDebug(scene, isAdmin = false) {
     if (!debugInstance) {
-        debugInstance = new Debug(scene);
+        debugInstance = new Debug(scene, isAdmin);
+    } else {
+        // Update existing instance with new scene and admin status
+        debugInstance.scene = scene;
+        debugInstance.isAdmin = isAdmin;
     }
     return debugInstance;
 }
