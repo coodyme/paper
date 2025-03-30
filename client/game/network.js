@@ -697,9 +697,15 @@ export class NetworkManager {
             this.chatSystem.cleanup();
         }
         
-        // Clean up projectiles
+        // Check if projectileManager exists before calling cleanup
         if (this.projectileManager) {
-            this.projectileManager.cleanup();
+            if (typeof this.projectileManager.cleanup === 'function') {
+                this.projectileManager.cleanup();
+            } else {
+                console.warn('ProjectileManager does not have a cleanup method');
+                // Fallback cleanup if needed
+                this.projectileManager = null;
+            }
         }
     }
 

@@ -78,6 +78,16 @@ style.textContent = `
     body {
         touch-action: none;
     }
+    
+    /* Logout button responsive style */
+    @media (max-width: 768px) {
+        button#logout-button {
+            padding: 6px 12px;
+            font-size: 14px;
+            top: 10px;
+            right: 10px;
+        }
+    }
 `;
 document.head.appendChild(style);
 

@@ -37,6 +37,9 @@ export class GameScene extends Scene {
         this.networkManager = null;
         this.updateInterval = null;
         this.debugSystem = null;
+
+        // Add logout button after initialization
+        this.addLogoutButton();
     }
     
     async init() {
@@ -141,6 +144,68 @@ export class GameScene extends Scene {
         this.renderer.render(this.scene, this.camera);
     }
     
+    // Add a new method to create a logout button
+    addLogoutButton() {
+        const logoutButton = document.createElement('button');
+        logoutButton.textContent = 'LOGOUT';
+        logoutButton.style.position = 'fixed';
+        logoutButton.style.top = '20px';
+        logoutButton.style.right = '20px';
+        logoutButton.style.padding = '8px 16px';
+        logoutButton.style.backgroundColor = '#ff3366';
+        logoutButton.style.color = 'white';
+        logoutButton.style.border = 'none';
+        logoutButton.style.borderRadius = '4px';
+        logoutButton.style.cursor = 'pointer';
+        logoutButton.style.fontWeight = 'bold';
+        logoutButton.style.zIndex = '1000';
+        logoutButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+        
+        // Check if on mobile device
+        const isMobile = (
+            navigator.userAgent.match(/Android/i) ||
+            navigator.userAgent.match(/webOS/i) ||
+            navigator.userAgent.match(/iPhone/i) ||
+            navigator.userAgent.match(/iPad/i) ||
+            navigator.userAgent.match(/iPod/i) ||
+            navigator.userAgent.match(/BlackBerry/i) ||
+            navigator.userAgent.match(/Windows Phone/i)
+        );
+
+        if (isMobile) {
+            logoutButton.style.padding = '12px 20px';
+            logoutButton.style.fontSize = '16px';
+        }
+
+        logoutButton.id = 'logout-button';
+
+        // Add hover effect
+        logoutButton.addEventListener('mouseover', () => {
+            logoutButton.style.backgroundColor = '#ff5588';
+        });
+        
+        logoutButton.addEventListener('mouseout', () => {
+            logoutButton.style.backgroundColor = '#ff3366';
+        });
+        
+        // Add click handler
+        logoutButton.addEventListener('click', () => this.handleLogout());
+        
+        // Store reference for cleanup
+        this.logoutButton = logoutButton;
+        
+        // Add to the DOM
+        document.body.appendChild(logoutButton);
+    }
+    
+    // Add a method to handle logout
+    handleLogout() {
+        // Clean up resources and transition back to login scene
+        this.cleanup();
+        this.sceneManager.changeScene('login');
+    }
+    
+    // Update existing cleanup method to also remove the logout button
     cleanup() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
@@ -156,6 +221,11 @@ export class GameScene extends Scene {
         
         if (this.networkManager && this.networkManager.cleanup) {
             this.networkManager.cleanup();
+        }
+        
+        // Remove logout button
+        if (this.logoutButton && this.logoutButton.parentNode) {
+            this.logoutButton.parentNode.removeChild(this.logoutButton);
         }
     }
 }

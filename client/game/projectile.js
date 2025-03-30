@@ -322,4 +322,47 @@ export class ProjectileManager {
         
         explosionAnimation();
     }
+
+    /**
+     * Cleanup method to properly dispose of resources
+     */
+    cleanup() {
+        // Clear any active projectiles
+        if (this.projectiles) {
+            // Remove projectiles from the scene
+            this.projectiles.forEach(projectile => {
+                if (projectile.mesh) {
+                    // Remove from scene if it has a mesh
+                    if (projectile.mesh.parent) {
+                        projectile.mesh.parent.remove(projectile.mesh);
+                    }
+                    
+                    // Dispose of any geometries and materials
+                    if (projectile.mesh.geometry) {
+                        projectile.mesh.geometry.dispose();
+                    }
+                    
+                    if (projectile.mesh.material) {
+                        if (Array.isArray(projectile.mesh.material)) {
+                            projectile.mesh.material.forEach(material => material.dispose());
+                        } else {
+                            projectile.mesh.material.dispose();
+                        }
+                    }
+                }
+            });
+            
+            // Clear the projectiles array
+            this.projectiles = [];
+        }
+        
+        // Clear any timers or intervals
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+        }
+        
+        // Clear any event listeners if applicable
+        // ...
+    }
 }
