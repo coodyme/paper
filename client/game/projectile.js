@@ -22,7 +22,7 @@ export class Projectile {
     
     createProjectile() {
         // Create a small cube as projectile
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const geometry = new THREE.BoxGeometry(0.25, 0.25, 0.25);
         
         // Use bright, glowing material
         const material = new THREE.MeshStandardMaterial({ 
