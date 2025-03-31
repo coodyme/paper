@@ -5,27 +5,27 @@ export class BillboardManager {
     constructor(scene) {
         this.scene = scene;
         this.billboards = [];
-        this.defaultMessages = [
-            "NEXUS CORP", 
-            "NEURAL LINK", 
-            "CYBER ENHANCE", 
-            "DIGITAL DREAMS", 
-            "NEON LIFE"
-        ];
+        this.defaultMessages = []
     }
     
     /**
      * Load billboard messages from config or use defaults
      * @returns {Array} Array of billboard messages
      */
-    loadBillboardMessages() {
+    async loadBillboardMessages() {
         try {
+            // If config isn't loaded, try to load it
+            if (!window.CONFIG_UI) {
+                await configLoader.loadConfig();
+            }
+            
             // Check if we have billboard messages in the config
             if (window.CONFIG_UI && window.CONFIG_UI.billboardMessages) {
+                console.log("Loaded billboard messages from config:", window.CONFIG_UI.billboardMessages);
                 return window.CONFIG_UI.billboardMessages;
             }
             
-            // Fall back to default messages if not found
+            console.warn("Billboard messages not found in config, using defaults");
             return this.defaultMessages;
         } catch (error) {
             console.error("Error loading billboard messages:", error);
@@ -36,9 +36,9 @@ export class BillboardManager {
     /**
      * Create billboards and position them around the environment
      */
-    createBillboards() {
+    async createBillboards() {
         // Get billboard messages
-        const billboardMessages = this.loadBillboardMessages();
+        const billboardMessages = await this.loadBillboardMessages();
         
         // Create a billboard for each message
         billboardMessages.forEach((text, i) => {

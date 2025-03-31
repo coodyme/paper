@@ -8,6 +8,7 @@ import configLoader from '../utils/configLoader.js';
 import { Scene } from '../utils/SceneManager.js';
 import roleManager from '../utils/RoleManager.js';
 import uiManager from '../utils/UIManager.js';
+import { BillboardManager } from '../game/billboard.js';
 
 export class GameScene extends Scene {
     constructor(sceneManager, params = {}) {
@@ -46,6 +47,10 @@ export class GameScene extends Scene {
     async init() {
         // Load configuration before initializing the game
         await configLoader.loadConfig();
+        
+        // Now create billboard manager after config is loaded
+        this.billboardManager = new BillboardManager(this.scene);
+        this.billboardManager.createBillboards();
         
         // Setup renderer
         this.renderer.setSize(window.innerWidth, window.innerHeight);

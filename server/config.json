@@ -5,8 +5,8 @@
     "playerTimeout": 60000
   },
   "game": {
-    "gridSize": 100,
-    "wallHeight": 30,
+    "gridSize": 10,
+    "wallHeight": 10,
     "spawnRadius": 20,
     "physics": {
       "projectileSpeed": 0.3,
@@ -19,7 +19,7 @@
     "billboardMessages": [
       "WELCOME TO PAPER",
       "EXPLORE THE GRID",
-      "CONNECT WITH FRIENDS",
+      "CONNECT WITH FRIENDS222",
       "THROW CUBES",
       "VOICE CHAT ENABLED"
     ],

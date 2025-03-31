@@ -108,6 +108,7 @@ export class ConfigManager {
             game: {
                 gridSize: this.config.game.gridSize,
                 wallHeight: this.config.game.wallHeight,
+                spawnRadius: this.config.game.spawnRadius,
                 physics: this.config.game.physics
             }
         };
