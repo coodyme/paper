@@ -20,6 +20,7 @@ export class SceneManager {
         this.container = container;
         this.currentScene = null;
         this.scenes = {};
+        this.transitioning = false;
     }
     
     /**
@@ -32,11 +33,19 @@ export class SceneManager {
     }
     
     /**
-     * Change to a different scene
+     * Change to a different scene with transition
      * @param {string} sceneName - Name of scene to change to
      * @param {Object} params - Parameters to pass to the new scene
      */
     async changeScene(sceneName, params = {}) {
+        // Prevent multiple scene changes at once
+        if (this.transitioning) {
+            console.warn('Scene transition already in progress, ignoring');
+            return;
+        }
+        
+        this.transitioning = true;
+        
         // Cleanup current scene if it exists
         if (this.currentScene) {
             this.currentScene.cleanup();
@@ -50,11 +59,28 @@ export class SceneManager {
         const SceneClass = this.scenes[sceneName];
         if (!SceneClass) {
             console.error(`Scene ${sceneName} not found`);
+            this.transitioning = false;
             return;
         }
         
-        this.currentScene = new SceneClass(this, params);
-        await this.currentScene.init();
+        console.log(`Changing scene to: ${sceneName}`);
+        
+        try {
+            this.currentScene = new SceneClass(this, params);
+            await this.currentScene.init();
+            this.transitioning = false;
+        } catch (error) {
+            console.error(`Error initializing scene ${sceneName}:`, error);
+            this.transitioning = false;
+        }
+    }
+    
+    /**
+     * Get the current scene instance
+     * @returns {Scene} - Current scene
+     */
+    getCurrentScene() {
+        return this.currentScene;
     }
     
     /**
@@ -62,7 +88,7 @@ export class SceneManager {
      * @param {number} deltaTime - Time elapsed since last update
      */
     update(deltaTime) {
-        if (this.currentScene) {
+        if (this.currentScene && !this.transitioning) {
             this.currentScene.update(deltaTime);
         }
     }
@@ -71,7 +97,7 @@ export class SceneManager {
      * Resize the current scene
      */
     resize() {
-        if (this.currentScene) {
+        if (this.currentScene && !this.transitioning) {
             this.currentScene.resize();
         }
     }

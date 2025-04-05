@@ -1,6 +1,9 @@
 import { SceneManager } from './managers/SceneManager.js';
 import { LoginScene } from './scenes/LoginScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { LobbyScene } from './scenes/LobbyScene.js';
+import stateManager from './managers/StateManager.js';
+import gameFeatureManager from './managers/GameFeatureManager.js';
 
 // Add CSS for controls
 const style = document.createElement('style');
@@ -99,6 +102,14 @@ window.debugSettings = {
 
 // Initialize the game when the DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("Initializing Paper Game...");
+    
+    // Initialize the state machine
+    console.log("Current state:", stateManager.getCurrentState());
+    
+    // Initialize game feature manager
+    console.log("Game features initialized:", gameFeatureManager.features);
+    
     // Create container for scenes
     const container = document.createElement('div');
     container.id = 'app-container';
@@ -115,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Register scenes
     sceneManager.registerScene('login', LoginScene);
+    sceneManager.registerScene('lobby', LobbyScene);
     sceneManager.registerScene('game', GameScene);
     
     // Start with login scene
@@ -127,4 +139,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Store reference for debugging
     window.sceneManager = sceneManager;
+    window.stateManager = stateManager;
 });

@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
@@ -9,6 +10,8 @@ import configManager from './managers/ConfigManager.js';
 import { AIBotManager } from './managers/AIBotManager.js'; // Add this import at the top
 import fs from 'fs';
 import path from 'path';
+import lobbyManager from './managers/LobbyManager.js';
+import lobbyRoutes from './routes/lobbyRoutes.js';
 
 // Load environment variables
 config();
@@ -19,10 +22,12 @@ const __dirname = dirname(__filename);
 
 // Create Express app
 const app = express();
-const server = createServer(app);
-
-// Add middleware to parse JSON requests
+app.use(cors());
 app.use(express.json());
+
+
+// Create HTTP server
+const server = createServer(app);
 
 // Verify API token at startup
 if (!process.env.CLOUDFLARE_API_TOKEN) {
@@ -84,6 +89,8 @@ app.get('/status', (req, res) => {
     res.json({
         status: 'online',
         players: Object.keys(playerManager.players).length,
+        playersInLobby: lobbyManager.playersInLobby.size,
+        playersInGame: lobbyManager.playersInGame.size,
         uptime: process.uptime()
     });
 });
@@ -93,6 +100,9 @@ app.get('/api/config', (req, res) => {
     // Only expose safe configuration to the client
     res.json(configManager.getClientConfig());
 });
+
+// Register lobby API routes
+app.use('/api/lobby', lobbyRoutes);
 
 // Socket.IO connection handler
 io.on('connection', (socket) => {
@@ -110,6 +120,12 @@ io.on('connection', (socket) => {
             
             // Set username and role
             playerManager.setUserInfo(socket.id, data.username, role);
+            
+            // Also add to lobby manager
+            lobbyManager.addToLobby({
+                id: socket.id,
+                username: data.username
+            });
             
             // Broadcast user info update
             socket.broadcast.emit('playerUpdated', {
@@ -131,6 +147,14 @@ io.on('connection', (socket) => {
             
             // Set username and role
             playerManager.setUserInfo(socket.id, data.username, role);
+            
+            // Also add to lobby manager if not already in
+            if (!lobbyManager.findPlayer(socket.id)) {
+                lobbyManager.addToLobby({
+                    id: socket.id,
+                    username: data.username
+                });
+            }
             
             // Broadcast user info update
             socket.broadcast.emit('playerUpdated', {
@@ -235,9 +259,52 @@ io.on('connection', (socket) => {
         });
     });
     
+    // Handle player ready to play
+    socket.on('readyToPlay', () => {
+        // Move player from lobby to game
+        if (lobbyManager.isInLobby(socket.id)) {
+            const player = lobbyManager.moveToGame(socket.id);
+            
+            if (player) {
+                // Notify all players about the change
+                io.emit('playerStatusChanged', {
+                    id: socket.id,
+                    status: 'inGame',
+                    username: player.username
+                });
+            }
+        }
+    });
+    
+    // Handle player return to lobby
+    socket.on('returnToLobby', () => {
+        // Move player from game back to lobby
+        if (lobbyManager.isInGame(socket.id)) {
+            const player = lobbyManager.moveToLobby(socket.id);
+            
+            if (player) {
+                // Notify all players about the change
+                io.emit('playerStatusChanged', {
+                    id: socket.id,
+                    status: 'inLobby',
+                    username: player.username
+                });
+            }
+        }
+    });
+    
     // Handle player disconnection
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
+        
+        // Remove from lobby or game
+        if (lobbyManager.isInLobby(socket.id)) {
+            lobbyManager.removeFromLobby(socket.id);
+        } else if (lobbyManager.isInGame(socket.id)) {
+            lobbyManager.moveToLobby(socket.id);
+            lobbyManager.removeFromLobby(socket.id);
+        }
+        
         playerManager.removePlayer(socket.id);
         
         // Broadcast player left to all other players

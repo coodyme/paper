@@ -9,11 +9,14 @@ import { initDebug } from '../utils/debug.js';
 import configLoader from '../utils/configLoader.js';
 import uiManager from '../managers/UIManager.js';
 import { BillboardManager } from '../game/billboard.js';
+import stateManager from '../managers/StateManager.js';
+import gameFeatureManager from '../managers/GameFeatureManager.js';
 
 export class GameScene extends Scene {
     constructor(sceneManager, params = {}) {
         super(sceneManager);
         this.username = params.username || 'Player';
+        this.playerId = params.playerId || null;
         this.role = params.role || 'player';
         
         // Update role manager with current role
@@ -40,11 +43,17 @@ export class GameScene extends Scene {
         this.updateInterval = null;
         this.debugSystem = null;
 
-        // Add logout button after initialization
-        this.addLogoutButton();
+        // Add back button to allow returning to lobby
+        this.backButton = null;
     }
     
     async init() {
+        // Set state to GAME
+        stateManager.changeState(stateManager.states.GAME, {
+            username: this.username,
+            playerId: this.playerId
+        });
+        
         // Load configuration before initializing the game
         await configLoader.loadConfig();
         
@@ -107,10 +116,13 @@ export class GameScene extends Scene {
         // Set network update rate from configuration
         const updateRate = configLoader.get('network.updateRate', 100);
         this.updateInterval = setInterval(() => {
-            if (this.networkManager) {
+            if (this.networkManager && gameFeatureManager.isEnabled('movement')) {
                 this.networkManager.update(this.clock.getDelta());
             }
         }, updateRate);
+        
+        // Add back button to return to lobby
+        this.addBackButton();
         
         // Start animation loop
         this.animate();
@@ -130,8 +142,8 @@ export class GameScene extends Scene {
         // Get delta time
         const deltaTime = this.clock.getDelta();
         
-        // Update player
-        if (this.player) {
+        // Only update player if movement is enabled
+        if (this.player && gameFeatureManager.isEnabled('movement')) {
             this.player.update(deltaTime);
         }
         
@@ -146,7 +158,7 @@ export class GameScene extends Scene {
         }
         
         // Update projectiles and other networked entities
-        if (this.networkManager) {
+        if (this.networkManager && gameFeatureManager.isEnabled('projectiles')) {
             this.networkManager.update(deltaTime);
         }
         
@@ -154,68 +166,54 @@ export class GameScene extends Scene {
         this.renderer.render(this.scene, this.camera);
     }
     
-    // Add a new method to create a logout button
-    addLogoutButton() {
-        const logoutButton = document.createElement('button');
-        logoutButton.textContent = 'LOGOUT';
-        logoutButton.style.position = 'fixed';
-        logoutButton.style.top = '20px';
-        logoutButton.style.right = '20px';
-        logoutButton.style.padding = '8px 16px';
-        logoutButton.style.backgroundColor = '#ff3366';
-        logoutButton.style.color = 'white';
-        logoutButton.style.border = 'none';
-        logoutButton.style.borderRadius = '4px';
-        logoutButton.style.cursor = 'pointer';
-        logoutButton.style.fontWeight = 'bold';
-        logoutButton.style.zIndex = '1000';
-        logoutButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+    // Add back button to return to lobby
+    addBackButton() {
+        this.backButton = document.createElement('button');
+        this.backButton.textContent = 'BACK TO LOBBY';
+        this.backButton.style.position = 'fixed';
+        this.backButton.style.top = '20px';
+        this.backButton.style.left = '20px';
+        this.backButton.style.padding = '8px 16px';
+        this.backButton.style.backgroundColor = '#00c3ff';
+        this.backButton.style.color = '#000';
+        this.backButton.style.border = 'none';
+        this.backButton.style.borderRadius = '4px';
+        this.backButton.style.cursor = 'pointer';
+        this.backButton.style.fontWeight = 'bold';
+        this.backButton.style.zIndex = '1000';
+        this.backButton.style.boxShadow = '0 0 10px rgba(0, 195, 255, 0.5)';
         
-        // Check if on mobile device
-        const isMobile = (
-            navigator.userAgent.match(/Android/i) ||
-            navigator.userAgent.match(/webOS/i) ||
-            navigator.userAgent.match(/iPhone/i) ||
-            navigator.userAgent.match(/iPad/i) ||
-            navigator.userAgent.match(/iPod/i) ||
-            navigator.userAgent.match(/BlackBerry/i) ||
-            navigator.userAgent.match(/Windows Phone/i)
-        );
-
-        if (isMobile) {
-            logoutButton.style.padding = '12px 20px';
-            logoutButton.style.fontSize = '16px';
-        }
-
-        logoutButton.id = 'logout-button';
-
-        // Add hover effect
-        logoutButton.addEventListener('mouseover', () => {
-            logoutButton.style.backgroundColor = '#ff5588';
+        // Handle hover effects
+        this.backButton.addEventListener('mouseover', () => {
+            this.backButton.style.backgroundColor = '#33d6ff';
         });
         
-        logoutButton.addEventListener('mouseout', () => {
-            logoutButton.style.backgroundColor = '#ff3366';
+        this.backButton.addEventListener('mouseout', () => {
+            this.backButton.style.backgroundColor = '#00c3ff';
         });
         
         // Add click handler
-        logoutButton.addEventListener('click', () => this.handleLogout());
-        
-        // Store reference for cleanup
-        this.logoutButton = logoutButton;
+        this.backButton.addEventListener('click', () => this.handleBackToLobby());
         
         // Add to the DOM
-        document.body.appendChild(logoutButton);
+        document.body.appendChild(this.backButton);
     }
     
-    // Add a method to handle logout
-    handleLogout() {
-        // Clean up resources and transition back to login scene
-        this.cleanup();
-        this.sceneManager.changeScene('login');
+    // Handle back to lobby button click
+    async handleBackToLobby() {
+        // Change state back to lobby
+        stateManager.changeState(stateManager.states.LOBBY, {
+            username: this.username,
+            playerId: this.playerId
+        });
+        
+        // Return to lobby scene
+        this.sceneManager.changeScene('lobby', {
+            username: this.username,
+            playerId: this.playerId
+        });
     }
     
-    // Update existing cleanup method to also remove the logout button
     cleanup() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
@@ -236,9 +234,14 @@ export class GameScene extends Scene {
         // Clean up UI elements
         uiManager.cleanup();
         
-        // Remove logout button
-        if (this.logoutButton && this.logoutButton.parentNode) {
-            this.logoutButton.parentNode.removeChild(this.logoutButton);
+        // Remove back button
+        if (this.backButton && this.backButton.parentNode) {
+            this.backButton.parentNode.removeChild(this.backButton);
+        }
+        
+        // Remove renderer element
+        if (this.renderer.domElement.parentNode) {
+            this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
         }
     }
 }
