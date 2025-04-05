@@ -22,6 +22,8 @@ export class Player {
         this.moveRight = false;
         
         this.createPlayer();
+        // Create input manager for keyboard controls only
+        // Touch controls are now handled by TouchControls component
         this.inputManager = new InputManager(this);
     }
     
@@ -274,6 +276,7 @@ export class Player {
     
     // Clean up resources when player is destroyed
     cleanup() {
+        // Clean up input manager
         if (this.inputManager) {
             this.inputManager.cleanup();
         }

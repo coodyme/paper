@@ -717,4 +717,49 @@ export class NetworkManager {
         }
         return this.playerData[userId]?.role === 'admin';
     }
+
+    /**
+     * Initialize ChatSystem with the new UI components
+     */
+    initChatSystem() {
+        // The chat system is now handled by UI components
+        // We'll expose methods for the ChatInput component to call
+    }
+    
+    /**
+     * Send a chat message from the local player
+     * @param {string} message - The message to send
+     */
+    sendChatMessage(message) {
+        if (!message || !message.trim()) return;
+        
+        // Display message above local player
+        this.displayLocalMessage(message);
+        
+        // Send message to all peers
+        this.broadcastChatMessage(message);
+    }
+    
+    /**
+     * Display a message above the local player
+     * @param {string} message - The message to display
+     */
+    displayLocalMessage(message) {
+        // Find the local player mesh
+        const localPlayer = this.getLocalPlayer();
+        if (!localPlayer) return;
+        
+        // Create message display above player
+        this.createMessageLabel(localPlayer, 'local-player', message);
+    }
+    
+    /**
+     * Broadcast chat message to all connected players
+     * @param {string} message - The message to broadcast
+     */
+    broadcastChatMessage(message) {
+        if (this.socket) {
+            this.socket.emit('chatMessage', { message });
+        }
+    }
 }
