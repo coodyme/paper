@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { InputManager } from '../utils/inputManager.js';
+import { InputManager } from '../ui/InputManager.js';
 import configLoader from '../utils/configLoader.js';
-import roleManager from '../utils/RoleManager.js';
+import roleManager from '../managers/RoleManager.js';
 
 export class Player {
     constructor(scene) {

@@ -33,9 +33,12 @@ export class InputManager {
     }
     
     setupKeyboardInputs() {
-        // Setup keyboard event listeners
-        document.addEventListener('keydown', this.onKeyDown.bind(this), false);
-        document.addEventListener('keyup', this.onKeyUp.bind(this), false);
+        // Add keyboard event listeners
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        
+        document.addEventListener('keydown', this.onKeyDown);
+        document.addEventListener('keyup', this.onKeyUp);
     }
     
     setupMobileInputs() {
@@ -248,6 +251,7 @@ export class InputManager {
                 
                 // Limit overall joystick movement radius
                 const maxRadius = containerRadius;
+                
                 if (distance > maxRadius) {
                     deltaX = (deltaX / distance) * maxRadius;
                     deltaY = (deltaY / distance) * maxRadius;
@@ -300,7 +304,7 @@ export class InputManager {
                     }
                 }
                 
-                // Update joystick position
+                // Update joystick visuals
                 this.updateJoystickVisuals();
             }
         }

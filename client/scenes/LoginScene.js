@@ -1,5 +1,5 @@
-import { Scene } from '../utils/SceneManager.js';
-import roleManager from '../utils/RoleManager.js';
+import { Scene } from '../managers/SceneManager.js';
+import roleManager from '../managers/RoleManager.js';
 
 export class LoginScene extends Scene {
     constructor(sceneManager, params = {}) {

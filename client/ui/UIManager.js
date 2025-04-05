@@ -1,5 +1,5 @@
-import roleManager from './RoleManager.js';
-import { getDebugger } from './debug.js';
+import roleManager from '../managers/RoleManager.js';
+import { getDebugger } from '../utils/debug.js';
 
 /**
  * Manages all UI elements in the game
@@ -25,7 +25,7 @@ export class UIManager {
      * Create and show debug controls (admin only)
      */
     showDebugControls() {
-        if (!roleManager.isAdmin()) return
+        if (!roleManager.isAdmin()) return;
         
         // Get existing debug controls or create them
         let debugControls = document.getElementById('debug-controls');

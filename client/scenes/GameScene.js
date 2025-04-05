@@ -1,13 +1,13 @@
 import * as THREE from 'three';
+import { Scene } from '../managers/SceneManager.js';
+import roleManager from '../managers/RoleManager.js';
 import { World } from '../game/world.js';
 import { Player } from '../game/player.js';
-import { ThirdPersonCamera } from '../game/camera.js';
 import { NetworkManager } from '../game/network.js';
+import { ThirdPersonCamera } from '../game/camera.js';
 import { initDebug } from '../utils/debug.js';
 import configLoader from '../utils/configLoader.js';
-import { Scene } from '../utils/SceneManager.js';
-import roleManager from '../utils/RoleManager.js';
-import uiManager from '../utils/UIManager.js';
+import uiManager from '../ui/UIManager.js';
 import { BillboardManager } from '../game/billboard.js';
 
 export class GameScene extends Scene {

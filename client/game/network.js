@@ -4,7 +4,7 @@ import { VoiceChat } from './voice.js';
 import { ProjectileManager } from './projectile.js';
 import { ChatSystem } from './chat.js'; // Import the chat system
 import { getDebugger } from '../utils/debug.js';
-import roleManager from '../utils/RoleManager.js';
+import roleManager from '../managers/RoleManager.js';
 
 export class NetworkManager {
     constructor(scene, camera, username = null, role = null) {
