@@ -1,3 +1,5 @@
+import { ColorScheme } from './ColorScheme.js';
+
 /**
  * Centralized UI styles for components
  */
@@ -9,7 +11,7 @@ export const UIStyles = {
         left: '20px',
         color: 'white',
         fontFamily: 'monospace',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: ColorScheme.uiDarkBg,
         padding: '10px',
         borderRadius: '5px',
         fontSize: '14px',
@@ -19,7 +21,7 @@ export const UIStyles = {
     debugInfo: {
         marginTop: '10px',
         padding: '5px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+        borderTop: `1px solid ${ColorScheme.neonAqua}`,
         fontFamily: 'monospace',
         fontSize: '12px',
         whiteSpace: 'pre-wrap',
@@ -37,21 +39,21 @@ export const UIStyles = {
         maxWidth: '500px',
         transform: 'translateX(-50%)',
         padding: '8px 15px',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: ColorScheme.uiDarkBg,
         color: '#fff',
-        border: '2px solid #00c3ff',
+        border: `2px solid ${ColorScheme.electricCyan}`,
         borderRadius: '5px',
         fontSize: '16px',
         fontFamily: 'Arial, sans-serif',
         zIndex: '1000',
-        boxShadow: '0 0 10px rgba(0, 195, 255, 0.5)',
+        boxShadow: ColorScheme.cyanGlow,
         outline: 'none',
         transition: 'all 0.3s ease'
     },
     
     chatInputFocus: {
-        borderColor: '#ff00ff',
-        boxShadow: '0 0 15px rgba(255, 0, 255, 0.7)'
+        borderColor: ColorScheme.cyberpunkPink,
+        boxShadow: ColorScheme.purpleGlow
     },
     
     chatInstructions: {
@@ -63,7 +65,7 @@ export const UIStyles = {
         fontFamily: 'Arial, sans-serif',
         fontSize: '12px',
         textAlign: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: ColorScheme.uiDarkBg,
         padding: '5px 10px',
         borderRadius: '3px',
         pointerEvents: 'none',
@@ -90,8 +92,8 @@ export const UIStyles = {
         width: '150px',
         height: '150px',
         borderRadius: '75px',
-        backgroundColor: 'rgba(127, 127, 127, 0.3)',
-        border: '2px solid rgba(255, 255, 255, 0.5)',
+        backgroundColor: 'rgba(28, 28, 45, 0.3)',
+        border: `2px solid rgba(0, 229, 255, 0.5)`,
         pointerEvents: 'none'
     },
     
@@ -103,7 +105,7 @@ export const UIStyles = {
         width: '75px',
         height: '75px',
         borderRadius: '50%',
-        border: '1px dashed rgba(255, 255, 255, 0.3)',
+        border: `1px dashed rgba(15, 240, 252, 0.3)`,
         pointerEvents: 'none'
     },
     
@@ -114,9 +116,9 @@ export const UIStyles = {
         width: '60px',
         height: '60px',
         borderRadius: '30px',
-        backgroundColor: 'rgba(0, 195, 255, 0.7)',
+        backgroundColor: `rgba(0, 229, 255, 0.7)`,
         transform: 'translate(-50%, -50%)',
-        boxShadow: '0 0 15px rgba(0, 195, 255, 0.7)',
+        boxShadow: ColorScheme.cyanGlow,
         pointerEvents: 'none'
     },
     
@@ -129,7 +131,7 @@ export const UIStyles = {
         transform: 'translate(-50%, -50%)',
         borderLeft: '10px solid transparent',
         borderRight: '10px solid transparent',
-        borderBottom: '15px solid rgba(255, 255, 255, 0.8)',
+        borderBottom: `15px solid ${ColorScheme.electricCyan}`,
         pointerEvents: 'none',
         display: 'none' // Initially hidden
     },
@@ -153,7 +155,7 @@ export const UIStyles = {
         bottom: '20px',
         left: '20px',
         zIndex: '1000',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: ColorScheme.uiDarkBg,
         padding: '10px',
         borderRadius: '5px',
         transition: 'all 0.3s ease'
@@ -165,7 +167,7 @@ export const UIStyles = {
         borderRadius: '3px',
         cursor: 'pointer',
         fontWeight: 'bold',
-        backgroundColor: '#333',
+        backgroundColor: ColorScheme.darkBgLight,
         color: '#ccc'
     },
     
@@ -180,24 +182,24 @@ export const UIStyles = {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(10, 10, 31, 0.9)',
         zIndex: '1000'
     },
     
     loginTitle: {
-        color: '#00ffff',
+        color: ColorScheme.electricCyan,
         fontSize: '4rem',
         fontFamily: 'Arial, sans-serif',
-        textShadow: '0 0 10px #00ffff',
+        textShadow: ColorScheme.cyanGlow,
         marginBottom: '2rem'
     },
     
     loginInputContainer: {
         width: '300px',
         padding: '1rem',
-        backgroundColor: 'rgba(30, 30, 30, 0.7)',
+        backgroundColor: 'rgba(28, 28, 45, 0.7)',
         borderRadius: '5px',
-        boxShadow: '0 0 15px rgba(0, 255, 255, 0.5)'
+        boxShadow: ColorScheme.cyanGlow
     },
     
     usernameInput: {
@@ -205,8 +207,8 @@ export const UIStyles = {
         padding: '10px',
         margin: '10px 0',
         boxSizing: 'border-box',
-        border: '2px solid #00ffff',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        border: `2px solid ${ColorScheme.brightCyan}`,
+        backgroundColor: 'rgba(10, 10, 31, 0.5)',
         color: 'white',
         outline: 'none',
         fontSize: '16px'
@@ -217,12 +219,12 @@ export const UIStyles = {
         padding: '10px',
         margin: '10px 0',
         border: 'none',
-        backgroundColor: '#00ffff',
+        backgroundColor: ColorScheme.brightCyan,
         color: 'black',
         fontSize: '16px',
         fontWeight: 'bold',
         cursor: 'pointer',
-        boxShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
+        boxShadow: ColorScheme.cyanGlow
     },
     
     // Responsive styles

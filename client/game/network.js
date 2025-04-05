@@ -5,6 +5,7 @@ import { ProjectileManager } from './projectile.js';
 import { ChatSystem } from './chat.js'; // Import the chat system
 import { getDebugger } from '../utils/debug.js';
 import roleManager from '../managers/RoleManager.js';
+import { ColorScheme, hexToThreeColor } from '../ui/styles/ColorScheme.js';
 
 export class NetworkManager {
     constructor(scene, camera, username = null, role = null) {
@@ -476,14 +477,14 @@ export class NetworkManager {
         canvas.height = 64;
         
         // Fill with transparent background
-        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        context.fillStyle = ColorScheme.uiDarkBg;
         context.fillRect(0, 0, canvas.width, canvas.height);
         
         // Determine if this player is an admin
         const isAdmin = this.isUserAdmin(id);
         
         // Add border (different color for admins)
-        context.strokeStyle = isAdmin ? '#ff0000' : '#ffffff';
+        context.strokeStyle = isAdmin ? ColorScheme.cyberpunkPink : ColorScheme.brightCyan;
         context.lineWidth = isAdmin ? 3 : 2;
         context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
         
@@ -508,7 +509,7 @@ export class NetworkManager {
         context.font = 'bold 30px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillStyle = isAdmin ? '#ff9999' : '#ffffff';
+        context.fillStyle = isAdmin ? ColorScheme.cyberpunkPinkAlt : ColorScheme.electricCyan;
         context.fillText(displayText, canvas.width / 2, canvas.height / 2);
         
         // Create texture and material
@@ -520,7 +521,7 @@ export class NetworkManager {
         });
         
         // Create label mesh
-        const labelGeometry = new THREE.PlaneGeometry(1.2, 0.3);
+        const labelGeometry = new THREE.PlaneGeometry(2, 0.5);
         const label = new THREE.Mesh(labelGeometry, material);
         
         // Position above player (with slight offset)
