@@ -10,23 +10,42 @@ export class UIManager {
         this.elements = {};
         this.debugger = null; // Initialize to null, will set later
         this.debugManager = null;
+        this.currentScene = null;
     }
 
     /**
      * Initialize UI elements
-     * @param {Debug} debugger - The debug instance
+     * @param {Debug} debugInstance - The debug instance
+     * @param {string} sceneName - The current scene name
      */
-    init(debugInstance) {
+    init(debugInstance, sceneName = null) {
         // Store the debugger instance
         this.debugger = debugInstance || getDebugger();
         
         // Get the debug manager
         this.debugManager = getDebugManager();
         
-        // Show debug UI for all users
-        if (this.debugManager) {
-            // Fixed: replaced showControls with createDebugControls
-            this.debugManager.createDebugControls();
+        // Store current scene
+        this.currentScene = sceneName;
+        
+        // Set debug visibility based on scene
+        const isGameScene = sceneName === 'game';
+        if (this.debugger) {
+            this.debugger.setInGameScene(isGameScene);
+        }
+    }
+
+    /**
+     * Change the current scene
+     * @param {string} sceneName - The new scene name
+     */
+    changeScene(sceneName) {
+        this.currentScene = sceneName;
+        
+        // Update debug visibility based on new scene
+        const isGameScene = sceneName === 'game';
+        if (this.debugger) {
+            this.debugger.setInGameScene(isGameScene);
         }
     }
 
@@ -38,7 +57,6 @@ export class UIManager {
         // This method is kept for backward compatibility
         // The debug UI is now managed by DebugManager
         if (this.debugManager) {
-            // Fixed: replaced showControls with createDebugControls
             this.debugManager.createDebugControls();
         }
     }

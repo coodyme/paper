@@ -3,9 +3,9 @@ import { initDebugManager, getDebugManager } from '../ui/managers/DebugManager.j
 
 // For backward compatibility - wrapper class that delegates to DebugManager
 export class Debug {
-    constructor(scene) {
+    constructor(scene, isInGameScene = false) {
         // Initialize the debug manager and store a reference
-        this.manager = initDebugManager(scene);
+        this.manager = initDebugManager(scene, isInGameScene);
     }
     
     // Forward all methods to the debug manager
@@ -41,6 +41,11 @@ export class Debug {
         return this.manager.showVelocityVector(object, velocity, scaleFactor);
     }
     
+    // Set whether we're in a game scene
+    setInGameScene(inGameScene) {
+        this.manager.setInGameScene(inGameScene);
+    }
+    
     // Getter for the enabled state
     get enabled() {
         return this.manager.enabled;
@@ -60,19 +65,20 @@ export class Debug {
 // Create singleton instance
 let debugInstance = null;
 
-export function initDebug(scene) {
+export function initDebug(scene, isInGameScene = false) {
     if (!debugInstance) {
-        debugInstance = new Debug(scene);
+        debugInstance = new Debug(scene, isInGameScene);
     } else {
-        // Update existing instance with new scene
+        // Update existing instance with new scene and game scene status
         debugInstance.scene = scene;
+        debugInstance.setInGameScene(isInGameScene);
     }
     return debugInstance;
 }
 
 export function getDebugger() {
     if (!debugInstance) {
-        console.warn('Debug system not initialized. Call initDebug(scene) first.');
+        console.warn('Debug system not initialized. Call initDebug(scene, isInGameScene) first.');
     }
     return debugInstance;
 }

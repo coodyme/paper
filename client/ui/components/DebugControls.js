@@ -5,9 +5,9 @@ import { UIStyles } from '../styles/UIStyles.js';
  * Debug controls component for all users (no longer admin-only)
  */
 export class DebugControls extends UIComponent {
-    constructor(debugger) {
+    constructor(debugManager) {
         super();
-        this.debugger = debugger;
+        this.debugManager = debugManager;
         this.debugInfo = null;
         this.visible = true; // Default to visible for everyone
     }
@@ -47,7 +47,8 @@ export class DebugControls extends UIComponent {
         const debugOptions = [
             { id: 'projectiles', label: 'Debug Projectiles' },
             { id: 'physics', label: 'Debug Physics' },
-            { id: 'network', label: 'Debug Network' }
+            { id: 'network', label: 'Debug Network' },
+            { id: 'consoleLog', label: 'Log to Console' }
         ];
         
         // Create checkbox for each debug option
@@ -61,7 +62,7 @@ export class DebugControls extends UIComponent {
             checkbox.className = 'debug-checkbox';
             checkbox.style.marginRight = '5px';
             checkbox.style.verticalAlign = 'middle';
-            checkbox.checked = this.debugger?.enabled[option.id] || false;
+            checkbox.checked = this.debugManager?.enabled[option.id] || false;
             
             const label = document.createElement('label');
             label.htmlFor = `debug-${option.id}`;
@@ -76,16 +77,53 @@ export class DebugControls extends UIComponent {
             
             // Add event listener to checkbox
             checkbox.addEventListener('change', () => {
-                if (this.debugger) {
-                    this.debugger.toggleDebug(option.id, checkbox.checked);
+                if (this.debugManager) {
+                    this.debugManager.toggleDebug(option.id, checkbox.checked);
                 }
             });
         });
+        
+        // Add title for the debug panel
+        const titleElement = document.createElement('div');
+        titleElement.textContent = 'Debug Panel';
+        titleElement.style.fontWeight = 'bold';
+        titleElement.style.marginBottom = '10px';
+        titleElement.style.borderBottom = '1px solid rgba(255, 255, 255, 0.3)';
+        titleElement.style.paddingBottom = '5px';
+        
+        // Insert title at the beginning of container
+        if (container.firstChild) {
+            container.insertBefore(titleElement, container.firstChild);
+        } else {
+            container.appendChild(titleElement);
+        }
         
         // Add a debug info panel for displaying real-time debug information
         this.debugInfo = document.createElement('div');
         this.debugInfo.id = 'debug-info';
         Object.assign(this.debugInfo.style, UIStyles.debugInfo);
+        
+        // Add header for debug info
+        const infoHeader = document.createElement('div');
+        infoHeader.textContent = 'Debug Output';
+        infoHeader.style.fontWeight = 'bold';
+        infoHeader.style.marginBottom = '5px';
+        
+        // Add clear button for debug info
+        const clearButton = document.createElement('button');
+        clearButton.textContent = 'Clear';
+        clearButton.style.fontSize = '10px';
+        clearButton.style.padding = '2px 5px';
+        clearButton.style.float = 'right';
+        clearButton.style.cursor = 'pointer';
+        clearButton.onclick = () => {
+            if (this.debugInfo) {
+                this.debugInfo.innerHTML = '';
+            }
+        };
+        
+        infoHeader.appendChild(clearButton);
+        container.appendChild(infoHeader);
         container.appendChild(this.debugInfo);
     }
     
