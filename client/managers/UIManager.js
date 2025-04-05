@@ -1,15 +1,11 @@
+import roleManager from './RoleManager.js';
 import { getDebugger } from '../utils/debug.js';
-import { roleManager } from '../security/roleManager.js';
-import { DebugControls } from '../ui/components/DebugControls.js';
-import { GameUI } from '../ui/components/GameUI.js';
-import { ChatInput } from '../ui/components/ChatInput.js';
 
 /**
  * Manages all UI elements in the game
  */
 export class UIManager {
     constructor() {
-        this.components = {};
         this.elements = {};
         this.debugger = null; // Initialize to null, will set later
     }
@@ -22,9 +18,7 @@ export class UIManager {
         // Store the debugger instance
         this.debugger = debugInstance || getDebugger();
         
-        if (roleManager.isAdmin()) {
-            this.showDebugControls();
-        }
+        this.showDebugControls();
     }
 
     /**
@@ -33,32 +27,92 @@ export class UIManager {
     showDebugControls() {
         if (!roleManager.isAdmin()) return;
         
-        this.components.debugControls = new DebugControls(this.debugger);
-        this.components.debugControls.render(document.body);
+        // Get existing debug controls or create them
+        let debugControls = document.getElementById('debug-controls');
+        if (!debugControls) {
+            // Create the container
+            debugControls = document.createElement('div');
+            debugControls.id = 'debug-controls';
+            debugControls.style.position = 'fixed';
+            debugControls.style.top = '20px';
+            debugControls.style.left = '20px';
+            debugControls.style.color = 'white';
+            debugControls.style.fontFamily = 'monospace';
+            debugControls.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            debugControls.style.padding = '10px';
+            debugControls.style.borderRadius = '5px';
+            debugControls.style.fontSize = '14px';
+            debugControls.style.zIndex = '1000';
+            document.body.appendChild(debugControls);
+            
+            // Add debug options through the debugger
+            this.addDebugOptions(debugControls);
+        }
         
-        // For backwards compatibility with old code
-        this.elements.debugControls = this.components.debugControls.element;
+        this.elements.debugControls = debugControls;
     }
 
     /**
      * Add debug options to the debug controls panel
      */
     addDebugOptions(container) {
-        if (!this.components.debugControls) return;
-        this.components.debugControls.addOptions(container);
+        const debugOptions = [
+            { id: 'projectiles', label: 'Debug Projectiles' },
+            { id: 'physics', label: 'Debug Physics' },
+            { id: 'network', label: 'Debug Network' }
+        ];
+        
+        // Create checkbox for each debug option
+        debugOptions.forEach(option => {
+            const optionContainer = document.createElement('div');
+            optionContainer.style.marginBottom = '5px';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `debug-${option.id}`;
+            checkbox.className = 'debug-checkbox';
+            checkbox.style.marginRight = '5px';
+            checkbox.style.verticalAlign = 'middle';
+            checkbox.checked = this.debugger?.enabled[option.id] || false;
+            
+            const label = document.createElement('label');
+            label.htmlFor = `debug-${option.id}`;
+            label.className = 'debug-label';
+            label.textContent = option.label;
+            label.style.cursor = 'pointer';
+            label.style.userSelect = 'none';
+            
+            optionContainer.appendChild(checkbox);
+            optionContainer.appendChild(label);
+            container.appendChild(optionContainer);
+            
+            // Add event listener to checkbox
+            checkbox.addEventListener('change', () => {
+                if (this.debugger) {
+                    this.debugger.toggleDebug(option.id, checkbox.checked);
+                }
+            });
+        });
+        
+        // Add a debug info panel for displaying real-time debug information
+        const debugInfo = document.createElement('div');
+        debugInfo.id = 'debug-info';
+        debugInfo.style.marginTop = '10px';
+        debugInfo.style.padding = '5px';
+        debugInfo.style.borderTop = '1px solid rgba(255, 255, 255, 0.3)';
+        debugInfo.style.fontFamily = 'monospace';
+        debugInfo.style.fontSize = '12px';
+        debugInfo.style.whiteSpace = 'pre-wrap';
+        debugInfo.style.maxHeight = '200px';
+        debugInfo.style.overflowY = 'auto';
+        debugInfo.style.display = 'none'; // Initially hidden
+        container.appendChild(debugInfo);
     }
 
     /**
      * Create game UI elements like chat, controls, etc.
      */
     createGameUI() {
-        this.components.gameUI = new GameUI();
-        this.components.gameUI.render(document.body);
-        
-        // Create chat component
-        this.components.chat = new ChatInput(this.networkManager);
-        this.components.chat.render(document.body);
-        
         // Additional UI elements can be created here
     }
 
@@ -66,21 +120,13 @@ export class UIManager {
      * Clean up all UI elements
      */
     cleanup() {
-        // Remove all created UI components
-        Object.values(this.components).forEach(component => {
-            if (component && typeof component.cleanup === 'function') {
-                component.cleanup();
-            }
-        });
-        
-        // For backwards compatibility with old code
+        // Remove all created UI elements
         Object.values(this.elements).forEach(element => {
             if (element && element.parentNode) {
                 element.parentNode.removeChild(element);
             }
         });
         
-        this.components = {};
         this.elements = {};
     }
 }

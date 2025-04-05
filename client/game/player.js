@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { InputManager } from '../ui/InputManager.js';
+import { InputManager } from '../managers/InputManager.js';
 import configLoader from '../utils/configLoader.js';
 import roleManager from '../managers/RoleManager.js';
 

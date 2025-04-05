@@ -7,7 +7,7 @@ import { NetworkManager } from '../game/network.js';
 import { ThirdPersonCamera } from '../game/camera.js';
 import { initDebug } from '../utils/debug.js';
 import configLoader from '../utils/configLoader.js';
-import uiManager from '../ui/UIManager.js';
+import uiManager from '../managers/UIManager.js';
 import { BillboardManager } from '../game/billboard.js';
 
 export class GameScene extends Scene {
