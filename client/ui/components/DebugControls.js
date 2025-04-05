@@ -2,13 +2,25 @@ import { UIComponent } from './UIComponent.js';
 import { UIStyles } from '../styles/UIStyles.js';
 
 /**
- * Debug controls component for admin users
+ * Debug controls component for all users (no longer admin-only)
  */
 export class DebugControls extends UIComponent {
     constructor(debugger) {
         super();
         this.debugger = debugger;
         this.debugInfo = null;
+        this.visible = true; // Default to visible for everyone
+    }
+    
+    /**
+     * Set visibility of debug controls (no longer based on admin status)
+     * @param {boolean} visible - Whether the controls should be visible
+     */
+    setVisibility(visible) {
+        this.visible = visible;
+        if (this.element) {
+            this.element.style.display = this.visible ? 'block' : 'none';
+        }
     }
     
     createElement() {
@@ -18,9 +30,13 @@ export class DebugControls extends UIComponent {
         // Apply styles
         Object.assign(debugControls.style, UIStyles.debugControls);
         
+        // Set initial visibility
+        debugControls.style.display = this.visible ? 'block' : 'none';
+        
         // Add debug options
         this.addDebugOptions(debugControls);
         
+        this.element = debugControls;
         return debugControls;
     }
     
@@ -71,5 +87,21 @@ export class DebugControls extends UIComponent {
         this.debugInfo.id = 'debug-info';
         Object.assign(this.debugInfo.style, UIStyles.debugInfo);
         container.appendChild(this.debugInfo);
+    }
+    
+    /**
+     * Update debug info panel with current debug information
+     * @param {Object} info - Debug information to display
+     */
+    updateDebugInfo(info) {
+        if (this.debugInfo && info) {
+            this.debugInfo.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(info)) {
+                const line = document.createElement('div');
+                line.textContent = `${key}: ${JSON.stringify(value)}`;
+                this.debugInfo.appendChild(line);
+            }
+        }
     }
 }

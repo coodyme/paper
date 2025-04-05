@@ -1,5 +1,6 @@
 import roleManager from './RoleManager.js';
 import { getDebugger } from '../utils/debug.js';
+import { getDebugManager } from '../ui/managers/DebugManager.js';
 
 /**
  * Manages all UI elements in the game
@@ -8,6 +9,7 @@ export class UIManager {
     constructor() {
         this.elements = {};
         this.debugger = null; // Initialize to null, will set later
+        this.debugManager = null;
     }
 
     /**
@@ -18,95 +20,37 @@ export class UIManager {
         // Store the debugger instance
         this.debugger = debugInstance || getDebugger();
         
-        this.showDebugControls();
+        // Get the debug manager
+        this.debugManager = getDebugManager();
+        
+        // Show debug UI for all users
+        if (this.debugManager) {
+            // Fixed: replaced showControls with createDebugControls
+            this.debugManager.createDebugControls();
+        }
     }
 
     /**
-     * Create and show debug controls (admin only)
+     * Create and show debug controls (now for all users, not just admin)
+     * @deprecated Use DebugManager instead
      */
     showDebugControls() {
-        if (!roleManager.isAdmin()) return;
-        
-        // Get existing debug controls or create them
-        let debugControls = document.getElementById('debug-controls');
-        if (!debugControls) {
-            // Create the container
-            debugControls = document.createElement('div');
-            debugControls.id = 'debug-controls';
-            debugControls.style.position = 'fixed';
-            debugControls.style.top = '20px';
-            debugControls.style.left = '20px';
-            debugControls.style.color = 'white';
-            debugControls.style.fontFamily = 'monospace';
-            debugControls.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            debugControls.style.padding = '10px';
-            debugControls.style.borderRadius = '5px';
-            debugControls.style.fontSize = '14px';
-            debugControls.style.zIndex = '1000';
-            document.body.appendChild(debugControls);
-            
-            // Add debug options through the debugger
-            this.addDebugOptions(debugControls);
+        // This method is kept for backward compatibility
+        // The debug UI is now managed by DebugManager
+        if (this.debugManager) {
+            // Fixed: replaced showControls with createDebugControls
+            this.debugManager.createDebugControls();
         }
-        
-        this.elements.debugControls = debugControls;
     }
 
     /**
      * Add debug options to the debug controls panel
+     * @deprecated Use DebugManager instead
      */
     addDebugOptions(container) {
-        const debugOptions = [
-            { id: 'projectiles', label: 'Debug Projectiles' },
-            { id: 'physics', label: 'Debug Physics' },
-            { id: 'network', label: 'Debug Network' }
-        ];
-        
-        // Create checkbox for each debug option
-        debugOptions.forEach(option => {
-            const optionContainer = document.createElement('div');
-            optionContainer.style.marginBottom = '5px';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `debug-${option.id}`;
-            checkbox.className = 'debug-checkbox';
-            checkbox.style.marginRight = '5px';
-            checkbox.style.verticalAlign = 'middle';
-            checkbox.checked = this.debugger?.enabled[option.id] || false;
-            
-            const label = document.createElement('label');
-            label.htmlFor = `debug-${option.id}`;
-            label.className = 'debug-label';
-            label.textContent = option.label;
-            label.style.cursor = 'pointer';
-            label.style.userSelect = 'none';
-            
-            optionContainer.appendChild(checkbox);
-            optionContainer.appendChild(label);
-            container.appendChild(optionContainer);
-            
-            // Add event listener to checkbox
-            checkbox.addEventListener('change', () => {
-                if (this.debugger) {
-                    this.debugger.toggleDebug(option.id, checkbox.checked);
-                }
-            });
-        });
-        
-        // Add a debug info panel for displaying real-time debug information
-        const debugInfo = document.createElement('div');
-        debugInfo.id = 'debug-info';
-        debugInfo.style.marginTop = '10px';
-        debugInfo.style.padding = '5px';
-        debugInfo.style.borderTop = '1px solid rgba(255, 255, 255, 0.3)';
-        debugInfo.style.fontFamily = 'monospace';
-        debugInfo.style.fontSize = '12px';
-        debugInfo.style.whiteSpace = 'pre-wrap';
-        debugInfo.style.maxHeight = '200px';
-        debugInfo.style.overflowY = 'auto';
-        debugInfo.style.display = 'none'; // Initially hidden
-        container.appendChild(debugInfo);
+        // This method is kept for backward compatibility
+        // The debug options are now managed by DebugManager
+        console.warn('UIManager.addDebugOptions is deprecated. Use DebugManager instead.');
     }
 
     /**
@@ -126,6 +70,11 @@ export class UIManager {
                 element.parentNode.removeChild(element);
             }
         });
+        
+        // Clean up debug UI
+        if (this.debugManager) {
+            this.debugManager.cleanup();
+        }
         
         this.elements = {};
     }
