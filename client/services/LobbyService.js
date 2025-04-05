@@ -114,6 +114,32 @@ export class LobbyService {
             throw error;
         }
     }
+    
+    /**
+     * Player returns from game to lobby
+     * @param {string} playerId - Player's ID
+     * @returns {Promise<Object>} Return status
+     */
+    async returnToLobby(playerId) {
+        try {
+            const response = await fetch(`${this.serverUrl}/api/lobby/return`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ playerId })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error returning to lobby:', error);
+            throw error;
+        }
+    }
 }
 
 // Create singleton instance

@@ -2,6 +2,7 @@ import { Scene } from '../managers/SceneManager.js';
 import * as THREE from 'three';
 import lobbyService from '../services/LobbyService.js';
 import stateManager from '../managers/StateManager.js';
+import { io } from 'socket.io-client'; // Import socket.io client
 
 /**
  * Lobby scene showing players in lobby/game and providing game entry options
@@ -42,6 +43,9 @@ export class LobbyScene extends Scene {
         this.lobbyPlayersList = null;
         this.gamePlayersList = null;
         this.statsUpdateInterval = null;
+
+        // Socket reference for listening to player events
+        this.socket = null;
     }
     
     async init() {
@@ -70,6 +74,9 @@ export class LobbyScene extends Scene {
                 console.error("Failed to join lobby:", error);
             }
         }
+
+        // Connect to the socket server to listen for player events
+        this.connectToSocketServer();
         
         // Start stats refresh interval
         this.statsUpdateInterval = setInterval(() => this.updateLobbyStats(), 3000);
@@ -344,6 +351,28 @@ export class LobbyScene extends Scene {
             this.sceneManager.changeScene('login');
         }
     }
+
+    // Connect to socket server to listen for events
+    connectToSocketServer() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const serverUrl = `${protocol}//paper-server.coody.me`;
+        
+        this.socket = io(serverUrl);
+        
+        // Listen for player left event
+        this.socket.on('playerLeft', (playerId) => {
+            console.log(`Player left: ${playerId}`);
+            // Immediately update lobby stats when a player disconnects
+            this.updateLobbyStats();
+        });
+        
+        // Listen for player status changes
+        this.socket.on('playerStatusChanged', (data) => {
+            console.log('Player status changed:', data);
+            // Update lobby stats when a player changes status
+            this.updateLobbyStats();
+        });
+    }
     
     animate() {
         if (this.sceneManager.currentScene !== this) return;
@@ -373,6 +402,12 @@ export class LobbyScene extends Scene {
         // Clear update interval
         if (this.statsUpdateInterval) {
             clearInterval(this.statsUpdateInterval);
+        }
+        
+        // Disconnect socket to stop receiving events
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
         }
         
         // Remove lobby UI

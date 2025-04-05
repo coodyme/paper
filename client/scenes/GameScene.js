@@ -11,6 +11,7 @@ import uiManager from '../managers/UIManager.js';
 import { BillboardManager } from '../game/billboard.js';
 import stateManager from '../managers/StateManager.js';
 import gameFeatureManager from '../managers/GameFeatureManager.js';
+import lobbyService from '../services/LobbyService.js';
 
 export class GameScene extends Scene {
     constructor(sceneManager, params = {}) {
@@ -45,6 +46,9 @@ export class GameScene extends Scene {
 
         // Add back button to allow returning to lobby
         this.backButton = null;
+        
+        // Ensure networkManager gets cleaned up properly
+        this.isCleanedUp = false;
     }
     
     async init() {
@@ -201,46 +205,64 @@ export class GameScene extends Scene {
     
     // Handle back to lobby button click
     async handleBackToLobby() {
-        // Change state back to lobby
-        stateManager.changeState(stateManager.states.LOBBY, {
-            username: this.username,
-            playerId: this.playerId
-        });
-        
-        // Return to lobby scene
-        this.sceneManager.changeScene('lobby', {
-            username: this.username,
-            playerId: this.playerId
-        });
+        try {
+            // Notify server through the API
+            await lobbyService.returnToLobby(this.playerId);
+            
+            // If we have network manager with socket connection, emit the event directly too
+            if (this.networkManager && this.networkManager.socket) {
+                this.networkManager.socket.emit('returnToLobby');
+            }
+            
+            // Change state back to lobby
+            stateManager.changeState(stateManager.states.LOBBY, {
+                username: this.username,
+                playerId: this.playerId
+            });
+            
+            // Clean up network resources before switching scenes
+            this.cleanup();
+            
+            // Return to lobby scene
+            this.sceneManager.changeScene('lobby', {
+                username: this.username,
+                playerId: this.playerId
+            });
+        } catch (error) {
+            console.error("Error returning to lobby:", error);
+            // Still try to return to lobby even if there was an error
+            stateManager.changeState(stateManager.states.LOBBY, {
+                username: this.username,
+                playerId: this.playerId
+            });
+            this.cleanup();
+            this.sceneManager.changeScene('lobby', {
+                username: this.username,
+                playerId: this.playerId
+            });
+        }
     }
     
     cleanup() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
+        if (this.isCleanedUp) return;
         
-        if (this.player) {
-            this.player.cleanup();
-        }
+        // Mark as cleaned up to prevent duplicate cleanup
+        this.isCleanedUp = true;
         
-        if (this.world) {
-            this.world.cleanup();
-        }
-        
-        if (this.networkManager && this.networkManager.cleanup) {
+        // Clean up network manager which includes socket connections
+        if (this.networkManager) {
             this.networkManager.cleanup();
+            this.networkManager = null;
         }
         
-        // Clean up UI elements
-        uiManager.cleanup();
-        
-        // Remove back button
-        if (this.backButton && this.backButton.parentNode) {
-            this.backButton.parentNode.removeChild(this.backButton);
+        // Clean up any UI elements
+        const backButton = document.getElementById('back-button');
+        if (backButton && backButton.parentNode) {
+            backButton.parentNode.removeChild(backButton);
         }
         
-        // Remove renderer element
-        if (this.renderer.domElement.parentNode) {
+        // Remove renderer from DOM
+        if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
             this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
         }
     }

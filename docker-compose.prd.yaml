@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  paper-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paper-webserver
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - paper-network
+    # Healthcheck to ensure Nginx stays running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  paper-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: paper-gameserver
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - paper-network
+    # Healthcheck for game server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  paper-network:
+    driver: bridge

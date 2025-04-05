@@ -1,6 +1,7 @@
 import roleManager from './RoleManager.js';
 import { getDebugger } from '../utils/debug.js';
 import { getDebugManager } from '../ui/managers/DebugManager.js';
+import stateManager from './StateManager.js';
 
 /**
  * Manages all UI elements in the game
@@ -33,6 +34,9 @@ export class UIManager {
         if (this.debugger) {
             this.debugger.setInGameScene(isGameScene);
         }
+        
+        // Initialize key listeners
+        this.initKeyListeners();
     }
 
     /**
@@ -95,6 +99,50 @@ export class UIManager {
         }
         
         this.elements = {};
+    }
+
+    /**
+     * Initialize global key listeners
+     */
+    initKeyListeners() {
+        // Add keydown listener for chat and other global controls
+        document.addEventListener('keydown', this.handleKeyPress.bind(this));
+    }
+
+    /**
+     * Remove global key listeners
+     */
+    removeKeyListeners() {
+        document.removeEventListener('keydown', this.handleKeyPress.bind(this));
+    }
+
+    /**
+     * Toggle chat input visibility
+     */
+    toggleChatInput() {
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+            if (chatInput.style.display === 'none' || chatInput.style.display === '') {
+                chatInput.style.display = 'block';
+                chatInput.focus();
+            } else {
+                chatInput.style.display = 'none';
+            }
+        }
+    }
+
+    // Add state checking for chat functionality
+    handleKeyPress(event) {
+        // Only enable chat in GAME state
+        const currentState = stateManager.getCurrentState();
+        
+        // Check if Enter key is pressed and we're in game state
+        if (event.key === 'Enter' && currentState === stateManager.states.GAME) {
+            // Toggle chat UI
+            this.toggleChatInput();
+            event.preventDefault(); // Prevent default Enter behavior
+        }
+        // Other key handlers...
     }
 }
 
